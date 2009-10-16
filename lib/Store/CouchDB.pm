@@ -129,6 +129,7 @@ sub get_view {
     my $c = 0;
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
+        next unless $doc->{value};
         $doc->{value}->{id} = $doc->{value}->{_id};
         $result->{ $doc->{key} || $c } = $doc->{value};
         $c++;
@@ -152,6 +153,7 @@ sub get_post_view {
     my $res = $self->_call($path, $opts);
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
+        next unless $doc->{value};
         $doc->{value}->{id} = $doc->{value}->{_id};
         $result->{ $doc->{key} } = $doc->{value};
     }
@@ -168,6 +170,7 @@ sub get_array_view {
     my $res = $self->_call($path);
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
+        next unless $doc->{value};
         $doc->{value}->{id} = $doc->{value}->{_id};
         push( @{$result}, $doc->{value} );
     }
