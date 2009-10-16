@@ -130,7 +130,7 @@ sub get_view {
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
-        $doc->{value}->{id} = $doc->{value}->{_id};
+        $doc->{value}->{id} = $doc->{id};
         $result->{ $doc->{key} || $c } = $doc->{value};
         $c++;
     }
@@ -154,7 +154,7 @@ sub get_post_view {
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
-        $doc->{value}->{id} = $doc->{value}->{_id};
+        $doc->{value}->{id} = $doc->{id};
         $result->{ $doc->{key} } = $doc->{value};
     }
     return $result;
@@ -171,7 +171,7 @@ sub get_array_view {
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
-        $doc->{value}->{id} = $doc->{value}->{_id};
+        $doc->{value}->{id} = $doc->{id};
         push( @{$result}, $doc->{value} );
     }
     return $result;
