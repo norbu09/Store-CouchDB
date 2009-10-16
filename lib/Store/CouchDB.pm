@@ -130,7 +130,8 @@ sub get_view {
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
-        $doc->{value}->{id} = $doc->{id};
+        # TODO debug why this crashes from time to time
+        #$doc->{value}->{id} = $doc->{id};
         $result->{ $doc->{key} || $c } = $doc->{value};
         $c++;
     }
