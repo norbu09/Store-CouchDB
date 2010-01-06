@@ -7,6 +7,8 @@ use URI;
 use Data::Dumper;
 use Encoding::FixLatin qw(fix_latin);
 
+our $VERSION = '0.2';
+
 has 'debug' => (
     is        => 'rw',
     required  => 1,
@@ -228,7 +230,6 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
