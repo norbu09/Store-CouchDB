@@ -5,6 +5,7 @@ use JSON;
 use LWP::UserAgent;
 use URI;
 use Data::Dumper;
+use Encoding::FixLatin qw(fix_latin);
 
 has 'debug' => (
     is        => 'rw',
@@ -74,9 +75,9 @@ sub put_doc {
 
 sub del_doc {
     my ( $self, $data ) = @_;
-    my $id = $data->{id} || $data->{_id};
+    my $id  = $data->{id}  || $data->{_id};
     my $rev = $data->{rev} || $data->{_rev};
-    confess "Document ID not defiend" unless $id;
+    confess "Document ID not defiend"       unless $id;
     confess "Document Revision not defiend" unless $rev;
     if ( $data->{dbname} ) {
         $self->db( $data->{dbname} );
@@ -113,7 +114,7 @@ sub copy_doc {
     my $doc = $self->get_doc($data);
     delete $doc->{_id};
     delete $doc->{_rev};
-    return $self->put_doc({doc => $doc});
+    return $self->put_doc( { doc => $doc } );
 }
 
 sub get_view {
@@ -123,13 +124,14 @@ sub get_view {
         $self->db( $data->{dbname} );
     }
     my $path = $self->_make_view_path($data);
-    my $res = $self->_call($path);
+    my $res  = $self->_call($path);
 
     return unless $res->{rows}->[0];
     my $c = 0;
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
+
         # TODO debug why this crashes from time to time
         #$doc->{value}->{id} = $doc->{id};
         $result->{ $doc->{key} || $c } = $doc->{value};
@@ -140,18 +142,18 @@ sub get_view {
 
 sub get_post_view {
     my ( $self, $data ) = @_;
-    confess "View not defiend" unless $data->{view};
+    confess "View not defiend"                            unless $data->{view};
     confess "No options defiend - use 'get_view' instead" unless $data->{opts};
     if ( $data->{dbname} ) {
         $self->db( $data->{dbname} );
     }
     my $opts;
-    if($data->{opts}){
+    if ( $data->{opts} ) {
         $opts = delete $data->{opts};
     }
     my $path = $self->_make_view_path($data);
     $self->method('POST');
-    my $res = $self->_call($path, $opts);
+    my $res = $self->_call( $path, $opts );
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
@@ -168,7 +170,7 @@ sub get_array_view {
         $self->db( $data->{dbname} );
     }
     my $path = $self->_make_view_path($data);
-    my $res = $self->_call($path);
+    my $res  = $self->_call($path);
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
@@ -179,17 +181,17 @@ sub get_array_view {
 }
 
 sub _make_view_path {
-    my ($self, $data) = @_;
+    my ( $self, $data ) = @_;
     $data->{view} =~ s/^\///;
-    my @view = split(/\//, $data->{view}, 2);
-    my $path = $self->db . '/_design/'.$view[0].'/_view/'.$view[1];
-    if($data->{opts}){
+    my @view = split( /\//, $data->{view}, 2 );
+    my $path = $self->db . '/_design/' . $view[0] . '/_view/' . $view[1];
+    if ( $data->{opts} ) {
         my @opts;
-        foreach my $opt (keys %{$data->{opts}}){
-            push(@opts, $opt.'='.$data->{opts}->{$opt});
+        foreach my $opt ( keys %{ $data->{opts} } ) {
+            push( @opts, $opt . '=' . $data->{opts}->{$opt} );
         }
-        my $_opt = join('&', @opts);
-        $path .= '?'.$_opt;
+        my $_opt = join( '&', @opts );
+        $path .= '?' . $_opt;
     }
     return $path;
 }
@@ -202,7 +204,7 @@ sub _call {
     my $req = HTTP::Request->new();
     $req->method( $self->method );
     $req->uri($uri);
-    $req->content( to_json($content) ) if ($content);
+    $req->content( fix_latin( to_json($content) ) ) if ($content);
 
     my $ua  = LWP::UserAgent->new();
     my $res = $ua->request($req);
