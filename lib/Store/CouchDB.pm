@@ -7,7 +7,7 @@ use URI;
 use Data::Dumper;
 use Encoding::FixLatin qw(fix_latin);
 
-our $VERSION = '0.2';
+our $VERSION = '0.3';
 
 has 'debug' => (
     is        => 'rw',
@@ -206,7 +206,8 @@ sub _call {
     my $req = HTTP::Request->new();
     $req->method( $self->method );
     $req->uri($uri);
-    $req->content( fix_latin( to_json($content) ) ) if ($content);
+    $req->content( fix_latin( to_json($content), bytes_only => 1 ) )
+      if ($content);
 
     my $ua  = LWP::UserAgent->new();
     my $res = $ua->request($req);
@@ -229,7 +230,6 @@ Store::CouchDB - The great new Store::CouchDB!
 Version 0.01
 
 =cut
-
 
 =head1 SYNOPSIS
 
