@@ -7,7 +7,7 @@ use URI;
 use Data::Dumper;
 use Encoding::FixLatin qw(fix_latin);
 
-our $VERSION = '0.3';
+our $VERSION = '0.4';
 
 has 'debug' => (
     is        => 'rw',
@@ -182,6 +182,16 @@ sub get_array_view {
     return $result;
 }
 
+sub config {
+    my ( $self, $data ) = @_;
+
+    foreach my $key ( keys %{ $data } )
+    {
+        $self->$key($data->{$key}) or confess "$key not defined as property!";
+    }
+    return $self;
+}
+
 sub _make_view_path {
     my ( $self, $data ) = @_;
     $data->{view} =~ s/^\///;
@@ -227,7 +237,7 @@ Store::CouchDB - The great new Store::CouchDB!
 
 =head1 VERSION
 
-Version 0.01
+Version 0.4
 
 =cut
 
@@ -239,8 +249,14 @@ Perhaps a little code snippet.
 
     use Store::CouchDB;
 
-    my $foo = Store::CouchDB->new();
-    ...
+    my $db = Store::CouchDB->new();
+    $db->config({host => 'localhost', db => 'your_db'});
+    my $couch = {
+        view   => 'design_doc/view',
+        opts   => { key => '"' . $key . '"' },
+    };
+    my $status = $db->get_array_view($couch);
+
 
 =head1 EXPORT
 
@@ -249,19 +265,25 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head1 FUNCTIONS
 
-=head2 function1
+=head2 get_doc
+
+=head2 put_doc
+
+=head2 del_doc
+
+=head2 update_doc
+
+=head2 copy_doc
+
+=head2 get_view
+
+=head2 get_post_view
+
+=head2 get_array_view
+
+=head2 config
 
 =cut
-
-sub function1 {
-}
-
-=head2 function2
-
-=cut
-
-sub function2 {
-}
 
 =head1 AUTHOR
 
