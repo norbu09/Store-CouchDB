@@ -62,6 +62,7 @@ sub put_doc {
         $self->db( $data->{dbname} );
     }
     my $path;
+    my $method = $self->method();
     if ( $data->{doc}->{_id} ) {
         $self->method('PUT');
         $path = $self->db . '/' . $data->{doc}->{_id};
@@ -72,6 +73,7 @@ sub put_doc {
         $path = $self->db;
     }
     my $res = $self->_call( $path, $data->{doc} );
+    $self->method($method);
     return $res->{id} || undef;
 }
 
@@ -154,8 +156,10 @@ sub get_post_view {
         $opts = delete $data->{opts};
     }
     my $path = $self->_make_view_path($data);
+    my $method = $self->method();
     $self->method('POST');
     my $res = $self->_call( $path, $opts );
+    $self->method($method);
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
         next unless $doc->{value};
