@@ -220,7 +220,7 @@ sub _call {
     my $req = HTTP::Request->new();
     $req->method( $self->method );
     $req->uri($uri);
-    $req->content( fix_latin( to_json($content), bytes_only => 1 ) )
+    $req->content( fix_latin( to_json($content, {allow_blessed => 1, convert_blessed => 1}), bytes_only => 1 ) )
       if ($content);
 
     my $ua  = LWP::UserAgent->new();
