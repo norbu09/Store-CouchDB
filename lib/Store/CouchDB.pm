@@ -7,7 +7,7 @@ use URI;
 use Data::Dumper;
 use Encoding::FixLatin qw(fix_latin);
 
-our $VERSION = '0.5';
+our $VERSION = '0.6';
 
 has 'debug' => (
     is        => 'rw',
