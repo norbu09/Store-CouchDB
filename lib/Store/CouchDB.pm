@@ -82,11 +82,15 @@ sub del_doc {
     my $id  = $data->{id}  || $data->{_id};
     my $rev = $data->{rev} || $data->{_rev};
     confess "Document ID not defiend"       unless $id;
-    confess "Document Revision not defiend" unless $rev;
+    if (!$rev) {
+        my $doc = $self->get_doc({id => $id});
+        $rev = $doc->{_rev};
+    }
     if ( $data->{dbname} ) {
         $self->db( $data->{dbname} );
     }
     my $path;
+    confess "Database not defiend" unless $self->db;
     $self->method('DELETE');
     $path = $self->db . '/' . $id . '?rev=' . $rev;
     my $res = $self->_call($path);
