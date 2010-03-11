@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+0.6     2010-03-11T13:16:04
+        delete works w/o revision now
+
 0.01    Date/time
         First version, released on an unsuspecting world.
 

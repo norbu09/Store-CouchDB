@@ -1,3 +1,10 @@
+.gitCOMMIT_EDITMSG
+.shipit
+.vimbk/.gitCOMMIT_EDITMSG.vimbk
+.vimbk/Changes.vimbk
+.vimbk/ignore.txt.vimbk
+.vimbk/Makefile.PL.vimbk
+.vimbk/MANIFEST.vimbk
 Changes
 ignore.txt
 inc/Module/AutoInstall.pm
@@ -11,11 +18,13 @@ inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
+lib/Store/.vimbk/CouchDB.pm.vimbk
 lib/Store/CouchDB.pm
 Makefile.PL
 MANIFEST
 META.yml
 README
+t/.vimbk/client.pl.vimbk
 t/00-load.t
 t/boilerplate.t
 t/client.pl
