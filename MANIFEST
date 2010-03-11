@@ -24,6 +24,7 @@ Makefile.PL
 MANIFEST
 META.yml
 README
+Store-CouchDB-0.6.tar.gz
 t/.vimbk/client.pl.vimbk
 t/00-load.t
 t/boilerplate.t
