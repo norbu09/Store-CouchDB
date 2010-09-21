@@ -183,9 +183,13 @@ sub get_array_view {
     my $res  = $self->_call($path);
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
-        next unless $doc->{value};
-        $doc->{value}->{id} = $doc->{id};
-        push( @{$result}, $doc->{value} );
+        if($doc->{doc}){
+            push( @{$result}, $doc->{doc} );
+        } else {
+            next unless $doc->{value};
+            $doc->{value}->{id} = $doc->{id};
+            push( @{$result}, $doc->{value} );
+        }
     }
     return $result;
 }
