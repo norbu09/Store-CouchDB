@@ -190,6 +190,16 @@ sub get_array_view {
     return $result;
 }
 
+sub compact {
+    my ( $self, $data ) = @_;
+    if ( $data->{dbname} ) {
+        $self->db( $data->{dbname} );
+    }
+    $self->method('POST');
+    my $res = $self->_call( $self->db . '/_compact' );
+    return $res;
+}
+
 sub config {
     my ( $self, $data ) = @_;
 
@@ -245,7 +255,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-$VERSION = "0.4"
+$VERSION = "1.0";
 
 =cut
 
