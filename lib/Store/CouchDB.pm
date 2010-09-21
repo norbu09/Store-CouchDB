@@ -7,7 +7,7 @@ use URI;
 use Data::Dumper;
 use Encoding::FixLatin qw(fix_latin);
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 
 has 'debug' => (
     is        => 'rw',
@@ -255,7 +255,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-$VERSION = "1.0";
+$VERSION = "1.1";
 
 =cut
 
