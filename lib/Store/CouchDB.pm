@@ -315,6 +315,8 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head2 get_doc
 
+=head2 get_design_docs
+
 =head2 put_doc
 
 =head2 del_doc
@@ -330,6 +332,8 @@ if you don't export anything, such as for a purely object-oriented module.
 =head2 get_array_view
 
 =head2 config
+
+=head2 compact
 
 =cut
 
