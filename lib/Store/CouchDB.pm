@@ -47,7 +47,7 @@ has 'err' => (
 
 has 'purge_limit' => (
     is        => 'rw',
-    default   => sub  { 1000 }
+    default   => sub  { 10000 }
 );
 
 sub get_doc {
@@ -245,16 +245,20 @@ sub compact {
         $self->db( $data->{dbname} );
     }
     my $res;
-    $res->{purge} = $self->purge();
+    if($data->{purge}){
+        $res->{purge} = $self->purge();
+    }
+    if($data->{view_compact}){
+        $self->method('POST');
+        $res->{view_compact} = $self->_call( $self->db . '/_view_cleanup' );
+        my $design = $self->get_design_docs();
+        $self->method('POST');
+        foreach my $doc (@{$design}){
+            $res->{$doc . '_compact'} = $self->_call( $self->db . '/_compact/' . $doc );
+        }
+    }
     $self->method('POST');
     $res->{compact} = $self->_call( $self->db . '/_compact' );
-    $res->{view_compact} = $self->_call( $self->db . '/_view_cleanup' );
-
-    my $design = $self->get_design_docs();
-    $self->method('POST');
-    foreach my $doc (@{$design}){
-        $res->{$doc . '_compact'} = $self->_call( $self->db . '/_compact/' . $doc );
-    }
 
     return $res;
 }
