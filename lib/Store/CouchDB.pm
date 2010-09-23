@@ -60,7 +60,7 @@ sub get_design_docs {
     if ( $data && $data->{dbname} ) {
         $self->db( $data->{dbname} );
     }
-    my $path = $self->db . '/descending=true&startkey="_design0"&endkey="_design"';
+    my $path = $self->db . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
     my $res = $self->_call($path);
     return unless $res->{rows}->[0];
     my @design;
