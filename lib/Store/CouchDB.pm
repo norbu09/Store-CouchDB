@@ -45,6 +45,11 @@ has 'err' => (
     predicate => 'has_err',
 );
 
+has 'purge_limit' => (
+    is        => 'rw',
+    default   => sub  { 1000 }
+);
+
 sub get_doc {
     my ( $self, $data ) = @_;
     confess "Document ID not defiend" unless $data->{id};
@@ -211,13 +216,37 @@ sub get_array_view {
     return $result;
 }
 
+sub purge {
+    my ( $self, $data ) = @_;
+    if ( $data->{dbname} ) {
+        $self->db( $data->{dbname} );
+    }
+    my $path = $self->db . '/_changes?limit='.$self->purge_limit.'&since=0';
+    $self->method('GET');
+    my $res = $self->_call($path);
+    return unless $res->{results}->[0];
+    my @del;
+    $self->method('POST');
+    my $resp;
+    foreach my $_del (@{$res->{results}}){
+        next unless $_del->{deleted} eq 'true';
+        my $opts = {
+        #purge_seq => $_del->{seq},
+            $_del->{id} => [$_del->{changes}->[0]->{rev}],
+        };
+        $resp->{$_del->{seq}} = $self->_call( $self->db . '/_purge', $opts );
+    }
+    return $resp;
+}
+
 sub compact {
     my ( $self, $data ) = @_;
     if ( $data->{dbname} ) {
         $self->db( $data->{dbname} );
     }
-    $self->method('POST');
     my $res;
+    $res->{purge} = $self->purge();
+    $self->method('POST');
     $res->{compact} = $self->_call( $self->db . '/_compact' );
     $res->{view_compact} = $self->_call( $self->db . '/_view_cleanup' );
 
