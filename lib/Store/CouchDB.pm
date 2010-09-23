@@ -220,7 +220,7 @@ sub compact {
     $res->{compact} = $self->_call( $self->db . '/_compact' );
     $res->{view_compact} = $self->_call( $self->db . '/_view_cleanup' );
 
-    my @design = get_design_docs();
+    my @design = $self->get_design_docs();
     foreach my $doc (@design){
         $res->{$doc . '_compact'} = $self->_call( $self->db . '/_compact/' . $doc );
     }
