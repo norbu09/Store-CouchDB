@@ -7,7 +7,7 @@ use URI;
 use Data::Dumper;
 use Encoding::FixLatin qw(fix_latin);
 
-our $VERSION = '1.1';
+our $VERSION = '1.2';
 
 has 'debug' => (
     is        => 'rw',
@@ -53,6 +53,22 @@ sub get_doc {
     }
     my $path = $self->db . '/' . $data->{id};
     return $self->_call($path);
+}
+
+sub get_design_docs {
+    my ( $self, $data ) = @_;
+    if ( $data && $data->{dbname} ) {
+        $self->db( $data->{dbname} );
+    }
+    my $path = $self->db . '/descending=true&startkey="_design0"&endkey="_design"';
+    my $res = $self->_call($path);
+    return unless $res->{rows}->[0];
+    my @design;
+    foreach my $_design (@{$res->{rows}}){
+        my ($_d, $name) = split(/\//, $_design->{key}, 2);
+        push(@design, $name);
+    }
+    return \@design;
 }
 
 sub put_doc {
@@ -200,7 +216,15 @@ sub compact {
         $self->db( $data->{dbname} );
     }
     $self->method('POST');
-    my $res = $self->_call( $self->db . '/_compact' );
+    my $res;
+    $res->{compact} = $self->_call( $self->db . '/_compact' );
+    $res->{view_compact} = $self->_call( $self->db . '/_view_cleanup' );
+
+    my @design = get_design_docs();
+    foreach my $doc (@design){
+        $res->{$doc . '_compact'} = $self->_call( $self->db . '/_compact/' . $doc );
+    }
+
     return $res;
 }
 
@@ -259,7 +283,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-$VERSION = "1.1";
+VERSION 1.2
 
 =cut
 
