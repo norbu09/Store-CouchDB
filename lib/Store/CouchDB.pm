@@ -61,6 +61,7 @@ sub get_design_docs {
         $self->db( $data->{dbname} );
     }
     my $path = $self->db . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
+    $self->method('GET');
     my $res = $self->_call($path);
     return unless $res->{rows}->[0];
     my @design;
@@ -220,8 +221,9 @@ sub compact {
     $res->{compact} = $self->_call( $self->db . '/_compact' );
     $res->{view_compact} = $self->_call( $self->db . '/_view_cleanup' );
 
-    my @design = $self->get_design_docs();
-    foreach my $doc (@design){
+    my $design = $self->get_design_docs();
+    $self->method('POST');
+    foreach my $doc (@{$design}){
         $res->{$doc . '_compact'} = $self->_call( $self->db . '/_compact/' . $doc );
     }
 
