@@ -1,55 +1,222 @@
-Store-CouchDB
+Store::CouchDB(3)     User Contributed Perl Documentation    Store::CouchDB(3)
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
 
+NAME
+       Store::CouchDB - a simple CouchDB driver
+
+VERSION
+       VERSION 1.3
+
+SYNOPSIS
+       Store::CouchDB is a very this wrapper around CouchDB. It is essentially
+       a set of calls I use in production and that came in handy. This is not
+       meant to be a complete library, it is just complete enough for the
+       things i need to do.
+
+           use Store::CouchDB;
+
+           my $db = Store::CouchDB->new();
+           $db->config({host => 'localhost', db => 'your_db'});
+           my $couch = {
+               view   => 'design_doc/view',
+               opts   => { key => '"' . $key . '"' },
+           };
+           my $status = $db->get_array_view($couch);
+
+FUNCTIONS
+   new
+       The Store::CouchDB class takes a number of parameters:
+
+       debug
+
+       Sets the class in debug mode
+
+       host
+
+       The host to use. Defaults to ’localhost’
+
+       port
+
+       The port to use. Defaults to ’5984’
+
+       db
+
+       The DB to use. This has to be set for all oprations!
+
+       method
+
+       This is internal and sets the request method to be used (GET|POST)
+
+       err
+
+       This is set if an error has occured and can be called to get the last
+       error with the ’has_error’ predicate.
+
+           $db->has_error
+
+       purge_limit
+
+       How many documents shall we try to purge. Defaults to 5000
+
+   get_doc
+       The get_doc call returns a document by its ID
+
+           get_doc({id => DOCUMENT_ID, [dbname => DATABASE]})
+
+   get_design_docs
+       The get_design_docs call returns all design document names in an array
+       reference.
+
+           get_design_docs({[dbname => DATABASE]})
+
+   put_doc
+       The put_doc call writes a document to the database and either updates a
+       existing document if the _id field is present or writes a new one.
+       Updates can also be done with the update_doc call but that is really
+       just a wrapper for put_doc.
+
+           put_doc({doc => DOCUMENT, [dbname => DATABASE]})
+
+   del_doc
+       The del_doc call marks a document as deleted. CouchDB needs a revision
+       to delete a document which is good for security but is not practical
+       for me in some situations. If no revision is supplied del_doc will get
+       the document, find the latest revision and delete the document.
+
+           del_doc({id => DOCUMENT_ID, [rev => REVISION, dbname => DATABASE]})
+
+   update_doc
+       The update_doc function is really just a wrapper for the put_doc call
+       and mainly there for compatibility. the naming is different and it is
+       discouraged to use and may disappear in a later version.
+
+           update_doc({doc => DOCUMENT, [name => DOCUMENT_ID, dbname => DATABASE]})
+
+   copy_doc
+       The copy_doc is _not_ the same as the CouchDB equivalent. In CouchDB
+       the copy command wants to have a name/id for the new document which is
+       mandatory and can not be ommitted. I find that inconvenient and made
+       this small wrapper. All it does is getting the doc to copy, removes the
+       _id and _rev fields and saves it back as a new document.
+
+           copy_doc({id => DOCUMENT_ID, [dbname => DATABASE]})
+
+
+       There are several ways to represent the result of a view and various
+       ways to query for a view. All the views support parameters but there
+       are different functions for GET/POST view handling and representing the
+       reults.  The get_view uses GET to call the view and returns a hash with
+       the _id as the key and the document as a value in the hash structure.
+       This is handy for getting a hash structure for several documents in the
+       DB.
+
+          get_view(
+              {
+                  view => 'DESIGN_DOC/VIEW',
+                  opts => { key => "\"" . KEY . "\"" }
+              }
+          );
+
+   get_post_view
+       The get_post_view uses POST to call the view and returns a hash with
+       the _id as the key and the document as a value in the hash structure.
+       This is handy for getting a hash structure for several documents in the
+       DB.
+
+          get_post_view(
+              {
+                  view => 'DESIGN_DOC/VIEW',
+                  opts => [ KEY1, KEY2, KEY3, ... ]
+              }
+          );
+
+   get_array_view
+       The get_array_view uses GET to call the view and returns an array
+       ireference of matched documents. This view functions is the one I use
+       most and has the best support for corner cases.
+
+          get_array_view(
+              {
+                  view => 'DESIGN_DOC/VIEW',
+                  opts => { key => "\"" . KEY . "\"" }
+              }
+          );
+
+   purge
+       This function tries to find deleted documents via the _changes call and
+       then purges as many deleted documents as defined in $self->purge_limit
+       which currently defaults to 5000. This call is somewhat experimental in
+       the moment.
+
+           purge({[dbname => DATABASE]})
+
+   compact
+       This compacts the DB file and optionally calls purge and cleans up the
+       view index as well.
+
+           compact({[purge=>1, view_compact=>1]})
+
+   config
+       This can be called with a hash of config values to configure the
+       databse object. I use it frequently with sections of config files.
+
+           config({[host => HOST, port => PORT, db => DATABASE]})
+
+EXPORT
+       Nothing is exported at this stage.
 
 INSTALLATION
 
 To install this module, run the following commands:
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+    perl Makefile.PL
+    make
+    make test
+    make install
 
-SUPPORT AND DOCUMENTATION
+AUTHOR
+       Lenz Gschwendtner, "<norbu09 at cpan.org>"
 
-After installing, you can find documentation for this module with the
-perldoc command.
+BUGS
+       Please report any bugs or feature requests to "bug-store-couchdb at
+       rt.cpan.org", or through the web interface at
+       <http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Store-CouchDB>.  I will
+       be notified, and then you’ll automatically be notified of progress on
+       your bug as I make changes.
 
-    perldoc Store::CouchDB
+SUPPORT
+       You can find documentation for this module with the perldoc command.
 
-You can also look for information at:
+           perldoc Store::CouchDB
 
-    RT, CPAN's request tracker
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Store-CouchDB
+       You can also look for information at:
 
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/Store-CouchDB
+       ·   RT: CPAN’s request tracker
 
-    CPAN Ratings
-        http://cpanratings.perl.org/d/Store-CouchDB
+           <http://rt.cpan.org/NoAuth/Bugs.html?Dist=Store-CouchDB>
 
-    Search CPAN
-        http://search.cpan.org/dist/Store-CouchDB/
+       ·   AnnoCPAN: Annotated CPAN documentation
+
+           <http://annocpan.org/dist/Store-CouchDB>
+
+       ·   CPAN Ratings
+
+           <http://cpanratings.perl.org/d/Store-CouchDB>
+
+       ·   Search CPAN
+
+           <http://search.cpan.org/dist/Store-CouchDB/>
+
+COPYRIGHT & LICENSE
+       Copyright 2010 Lenz Gschwendtner.
+
+       This program is free software; you can redistribute it and/or modify it
+       under the terms of either: the GNU General Public License as published
+       by the Free Software Foundation; or the Artistic License.
+
+       See http://dev.perl.org/licenses/ for more information.
 
 
-COPYRIGHT AND LICENCE
 
-Copyright (C) 2009 Lenz Gschwendtner
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
-
+perl v5.10.0                      2010-09-24                 Store::CouchDB(3)
