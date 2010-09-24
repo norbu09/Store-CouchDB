@@ -7,7 +7,36 @@ use URI;
 use Data::Dumper;
 use Encoding::FixLatin qw(fix_latin);
 
-our $VERSION = '1.2';
+=head1 NAME
+
+Store::CouchDB - a simple CouchDB driver
+
+=head1 VERSION
+
+VERSION 1.3
+
+=cut
+
+=head1 SYNOPSIS
+
+Store::CouchDB is a very this wrapper around CouchDB. It is essentially
+a set of calls I use in production and that came in handy. This is not
+meant to be a complete library, it is just complete enough for the
+things i need to do.
+
+    use Store::CouchDB;
+
+    my $db = Store::CouchDB->new();
+    $db->config({host => 'localhost', db => 'your_db'});
+    my $couch = {
+        view   => 'design_doc/view',
+        opts   => { key => '"' . $key . '"' },
+    };
+    my $status = $db->get_array_view($couch);
+
+=cut
+
+our $VERSION = '1.3';
 
 has 'debug' => (
     is        => 'rw',
@@ -47,8 +76,53 @@ has 'err' => (
 
 has 'purge_limit' => (
     is        => 'rw',
-    default   => sub  { 10000 }
+    default   => sub  { 5000 }
 );
+
+=head1 FUNCTIONS
+
+=head2 new
+
+The Store::CouchDB class takes a number of parameters:
+
+=head3 debug
+
+Sets the class in debug mode
+
+=head3 host
+
+The host to use. Defaults to 'localhost'
+
+=head3 port
+
+The port to use. Defaults to '5984'
+
+=head3 db
+
+The DB to use. This has to be set for all oprations!
+
+=head3 method
+
+This is internal and sets the request method to be used (GET|POST)
+
+=head3 err
+
+This is set if an error has occured and can be called to get the last
+error with the 'has_error' predicate.
+
+    $db->has_error
+
+=head3 purge_limit
+
+How many documents shall we try to purge. Defaults to 5000
+
+=head2 get_doc
+
+The get_doc call returns a document by its ID
+
+    get_doc({id => DOCUMENT_ID, [dbname => DATABASE]})
+
+=cut
 
 sub get_doc {
     my ( $self, $data ) = @_;
@@ -59,6 +133,15 @@ sub get_doc {
     my $path = $self->db . '/' . $data->{id};
     return $self->_call($path);
 }
+
+=head2 get_design_docs
+
+The get_design_docs call returns all design document names in an array
+reference.
+
+    get_design_docs({[dbname => DATABASE]})
+
+=cut
 
 sub get_design_docs {
     my ( $self, $data ) = @_;
@@ -76,6 +159,17 @@ sub get_design_docs {
     }
     return \@design;
 }
+
+=head2 put_doc
+
+The put_doc call writes a document to the database and either updates a
+existing document if the _id field is present or writes a new one.
+Updates can also be done with the update_doc call but that is really
+just a wrapper for put_doc.
+
+    put_doc({doc => DOCUMENT, [dbname => DATABASE]})
+
+=cut
 
 sub put_doc {
     my ( $self, $data ) = @_;
@@ -99,6 +193,17 @@ sub put_doc {
     return $res->{id} || undef;
 }
 
+=head2 del_doc
+
+The del_doc call marks a document as deleted. CouchDB needs a revision
+to delete a document which is good for security but is not practical for
+me in some situations. If no revision is supplied del_doc will get the
+document, find the latest revision and delete the document.
+
+    del_doc({id => DOCUMENT_ID, [rev => REVISION, dbname => DATABASE]})
+
+=cut
+
 sub del_doc {
     my ( $self, $data ) = @_;
     my $id  = $data->{id}  || $data->{_id};
@@ -120,6 +225,16 @@ sub del_doc {
 
 }
 
+=head2 update_doc
+
+The update_doc function is really just a wrapper for the put_doc call
+and mainly there for compatibility. the naming is different and it is
+discouraged to use and may disappear in a later version.
+
+    update_doc({doc => DOCUMENT, [name => DOCUMENT_ID, dbname => DATABASE]})
+
+=cut
+
 sub update_doc {
     my ( $self, $data ) = @_;
     confess "Document not defiend" unless $data->{doc};
@@ -131,6 +246,18 @@ sub update_doc {
     }
     return $self->put_doc($data);
 }
+
+=head2 copy_doc
+
+The copy_doc is _not_ the same as the CouchDB equivalent. In CouchDB the
+copy command wants to have a name/id for the new document which is
+mandatory and can not be ommitted. I find that inconvenient and made
+this small wrapper. All it does is getting the doc to copy, removes the
+_id and _rev fields and saves it back as a new document.
+
+    copy_doc({id => DOCUMENT_ID, [dbname => DATABASE]})
+
+=cut
 
 sub copy_doc {
     my ( $self, $data ) = @_;
@@ -146,6 +273,25 @@ sub copy_doc {
     delete $doc->{_rev};
     return $self->put_doc( { doc => $doc } );
 }
+
+=head2
+
+There are several ways to represent the result of a view and various
+ways to query for a view. All the views support parameters but there are
+different functions for GET/POST view handling and representing the
+reults.
+The get_view uses GET to call the view and returns a hash with the _id
+as the key and the document as a value in the hash structure. This is
+handy for getting a hash structure for several documents in the DB.
+
+   get_view(
+       {
+           view => 'DESIGN_DOC/VIEW',
+           opts => { key => "\"" . KEY . "\"" }
+       }
+   );
+
+=cut
 
 sub get_view {
     my ( $self, $data ) = @_;
@@ -169,6 +315,21 @@ sub get_view {
     }
     return $result;
 }
+
+=head2 get_post_view
+
+The get_post_view uses POST to call the view and returns a hash with the _id
+as the key and the document as a value in the hash structure. This is
+handy for getting a hash structure for several documents in the DB.
+
+   get_post_view(
+       {
+           view => 'DESIGN_DOC/VIEW',
+           opts => [ KEY1, KEY2, KEY3, ... ]
+       }
+   );
+
+=cut
 
 sub get_post_view {
     my ( $self, $data ) = @_;
@@ -195,6 +356,21 @@ sub get_post_view {
     return $result;
 }
 
+=head2 get_array_view
+
+The get_array_view uses GET to call the view and returns an array
+ireference of matched documents. This view functions is the one I use
+most and has the best support for corner cases.
+
+   get_array_view(
+       {
+           view => 'DESIGN_DOC/VIEW',
+           opts => { key => "\"" . KEY . "\"" }
+       }
+   );
+
+=cut
+
 sub get_array_view {
     my ( $self, $data ) = @_;
     confess "View not defiend" unless $data->{view};
@@ -216,6 +392,17 @@ sub get_array_view {
     return $result;
 }
 
+=head2 purge
+
+This function tries to find deleted documents via the _changes call and
+then purges as many deleted documents as defined in $self->purge_limit
+which currently defaults to 5000. This call is somewhat experimental in
+the moment.
+
+    purge({[dbname => DATABASE]})
+
+=cut
+
 sub purge {
     my ( $self, $data ) = @_;
     if ( $data->{dbname} ) {
@@ -229,7 +416,7 @@ sub purge {
     $self->method('POST');
     my $resp;
     foreach my $_del (@{$res->{results}}){
-        next unless $_del->{deleted} eq 'true';
+        next unless ($_del->{deleted} and ($_del->{deleted} eq 'true'));
         my $opts = {
         #purge_seq => $_del->{seq},
             $_del->{id} => [$_del->{changes}->[0]->{rev}],
@@ -238,6 +425,15 @@ sub purge {
     }
     return $resp;
 }
+
+=head2 compact
+
+This compacts the DB file and optionally calls purge and cleans up the
+view index as well.
+
+    compact({[purge=>1, view_compact=>1]})
+
+=cut
 
 sub compact {
     my ( $self, $data ) = @_;
@@ -262,6 +458,15 @@ sub compact {
 
     return $res;
 }
+
+=head2 config
+
+This can be called with a hash of config values to configure the databse
+object. I use it frequently with sections of config files.
+
+    config({[host => HOST, port => PORT, db => DATABASE]})
+
+=cut
 
 sub config {
     my ( $self, $data ) = @_;
@@ -312,63 +517,9 @@ sub _call {
     return;
 }
 
-=head1 NAME
-
-Store::CouchDB - a simple CouchDB driver
-
-=head1 VERSION
-
-VERSION 1.2
-
-=cut
-
-=head1 SYNOPSIS
-
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
-
-    use Store::CouchDB;
-
-    my $db = Store::CouchDB->new();
-    $db->config({host => 'localhost', db => 'your_db'});
-    my $couch = {
-        view   => 'design_doc/view',
-        opts   => { key => '"' . $key . '"' },
-    };
-    my $status = $db->get_array_view($couch);
-
-
 =head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 FUNCTIONS
-
-=head2 get_doc
-
-=head2 get_design_docs
-
-=head2 put_doc
-
-=head2 del_doc
-
-=head2 update_doc
-
-=head2 copy_doc
-
-=head2 get_view
-
-=head2 get_post_view
-
-=head2 get_array_view
-
-=head2 config
-
-=head2 compact
-
-=cut
+Nothing is exported at this stage.
 
 =head1 AUTHOR
 
