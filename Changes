@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+1.4     2010-09-24T14:04:12
+        cleanup to make it CPAN ready
+
 1.3     2010-09-24T13:37:42
         added compression for databases and documentation
 
