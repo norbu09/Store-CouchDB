@@ -12,4 +12,5 @@ cover_db
 *.swp
 *.swo
 .gitCOMMIT_EDITMSG
+.shipit
 MANIFEST.bak

@@ -14,7 +14,7 @@ inc/Module/Install/WriteAll.pm
 lib/Store/CouchDB.pm
 Makefile.PL
 MANIFEST
-META.yml
+MANIFEST.SKIP
 README
 t/00-load.t
 t/boilerplate.t

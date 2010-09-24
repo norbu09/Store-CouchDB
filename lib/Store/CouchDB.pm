@@ -1,6 +1,6 @@
 package Store::CouchDB;
 
-use Moose;
+use Mouse;
 use JSON;
 use LWP::UserAgent;
 use URI;
@@ -13,16 +13,23 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-VERSION 1.3
+VERSION 1.4
 
 =cut
 
 =head1 SYNOPSIS
 
-Store::CouchDB is a very this wrapper around CouchDB. It is essentially
-a set of calls I use in production and that came in handy. This is not
-meant to be a complete library, it is just complete enough for the
-things i need to do.
+Store::CouchDB is a very thin wrapper around CouchDB. It is essentially
+a set of calls I use in production and is by no means a complete
+library, it is just complete enough for the things I need to do. This is
+a grown set of functions that evolved over the last years of using
+CouchDB in various projects and was written originally to be compatible
+with DB::CouchDB. This has long passed and can only be noticed at some
+places.
+
+One of the things I banged my head against for some time is non UTF8
+stuff that somehow enters the system and then breaks CouchDB. I use the
+brilliant Encoding::FixLatin module to fix this on the fly.
 
     use Store::CouchDB;
 
@@ -36,7 +43,7 @@ things i need to do.
 
 =cut
 
-our $VERSION = '1.3';
+our $VERSION = '1.4';
 
 has 'debug' => (
     is        => 'rw',
@@ -274,7 +281,7 @@ sub copy_doc {
     return $self->put_doc( { doc => $doc } );
 }
 
-=head2
+=head2 get_view
 
 There are several ways to represent the result of a view and various
 ways to query for a view. All the views support parameters but there are
@@ -531,9 +538,6 @@ Please report any bugs or feature requests to C<bug-store-couchdb at rt.cpan.org
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Store-CouchDB>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
-
-
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
@@ -566,14 +570,14 @@ L<http://search.cpan.org/dist/Store-CouchDB/>
 
 =head1 ACKNOWLEDGEMENTS
 
+Thanks for DB::CouchDB which was very enspiring for writing this library
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 Lenz Gschwendtner.
+Copyright 2010 Lenz Gschwendtner.
 
 This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
+under the terms of either: the Apache License or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
 
