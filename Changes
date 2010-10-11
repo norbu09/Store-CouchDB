@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+1.5     2010-10-11T13:34:48
+        better handling for key/value pair results
+
 1.4     2010-09-24T14:04:12
         cleanup to make it CPAN ready
 
