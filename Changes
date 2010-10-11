@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+1.6     2010-10-11T13:49:32
+        documented the changes in response handling
+
 1.5     2010-10-11T13:34:48
         better handling for key/value pair results
 

@@ -43,7 +43,7 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '1.5';
+our $VERSION = '1.6';
 
 has 'debug' => (
     is        => 'rw',
