@@ -376,6 +376,11 @@ most and has the best support for corner cases.
        }
    );
 
+A normal response hash would be the "value" part of the document with
+the _id moved in as "id". If the response is not a HASH (the request was
+resulting in key/value pairs) the entire doc is returned resulting in a
+hash of key/value/id per document.
+
 =cut
 
 sub get_array_view {
