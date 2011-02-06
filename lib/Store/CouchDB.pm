@@ -518,10 +518,13 @@ sub _call {
     my $req = HTTP::Request->new();
     $req->method( $self->method );
     $req->uri($uri);
+
     $req->content( fix_latin( to_json($content, {allow_blessed => 1, convert_blessed => 1}), bytes_only => 1 ) )
       if ($content);
 
     my $ua  = LWP::UserAgent->new();
+    # FIXME set the content type to application/json
+    $ua->default_header('Content-Type' => "application/json");
     my $res = $ua->request($req);
     print STDERR "Result: " . $res->decoded_content . "\n" if $self->is_debug;
     if ( $res->is_success ) {
