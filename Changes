@@ -1,5 +1,12 @@
 Revision history for Store-CouchDB
 
+1.8     2011-04-21T14:07:24
+        added auth support for newer couchdb versions
+        made debug work the way it should:
+          - default off
+          - turn on with $self->debug
+          - added clearer to turn off: $self->no_debug
+
 1.7     2011-02-07T10:31:54
         added a applicatio/json header
 
