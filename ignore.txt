@@ -10,3 +10,5 @@ Store-CouchDB-*
 cover_db
 .vimbk
 .gitCOMMIT_EDITMSG
+.shipit
+META.yml
