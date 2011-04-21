@@ -13,7 +13,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-VERSION 1.4
+Version 1.8
 
 =cut
 
@@ -47,9 +47,10 @@ our $VERSION = '1.8';
 
 has 'debug' => (
     is        => 'rw',
-    required  => 1,
-    default   => sub { 0 },
+    default   => sub { },
+    lazy      => 1,
     predicate => 'is_debug',
+    clearer   => 'no_debug',
 );
 
 has 'host' => (
