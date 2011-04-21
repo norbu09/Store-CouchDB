@@ -70,6 +70,14 @@ has 'db' => (
     default  => sub { '' }
 );
 
+has 'user' => (
+    is => 'rw',
+);
+
+has 'pass' => (
+    is => 'rw',
+);
+
 has 'method' => (
     is       => 'rw',
     required => 1,
@@ -107,6 +115,14 @@ The port to use. Defaults to '5984'
 =head3 db
 
 The DB to use. This has to be set for all oprations!
+
+=head3 user
+
+The DB user to authenticate as. optional
+
+=head3 pass
+
+The password for the user to authenticate with. required if user is given.
 
 =head3 method
 
@@ -512,7 +528,10 @@ sub _make_view_path {
 
 sub _call {
     my ( $self, $path, $content ) = @_;
-    my $uri = 'http://' . $self->host . ':' . $self->port . '/' . $path;
+    my $uri = 'http://';
+    $uri .= $self->user . ':' . $self->pass . '@'
+        if ($self->user and $self->pass);
+    $uri .= $self->host . ':' . $self->port . '/' . $path;
     print STDERR "URI: $uri\n" if $self->is_debug;
 
     my $req = HTTP::Request->new();
