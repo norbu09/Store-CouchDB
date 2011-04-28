@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+1.9     2011-04-28T15:14:15
+        added support for include_docs=true view calls
+
 1.8     2011-04-21T14:07:24
         added auth support for newer couchdb versions
         made debug work the way it should:
