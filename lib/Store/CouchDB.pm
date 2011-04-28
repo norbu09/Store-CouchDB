@@ -330,11 +330,14 @@ sub get_view {
     my $c = 0;
     my $result;
     foreach my $doc ( @{ $res->{rows} } ) {
+        if($doc->{doc}){
+            $result->{ $doc->{key} || $c } = $doc->{doc};
+        } else {
         next unless $doc->{value};
-
-        # TODO debug why this crashes from time to time
-        #$doc->{value}->{id} = $doc->{id};
-        $result->{ $doc->{key} || $c } = $doc->{value};
+            # TODO debug why this crashes from time to time
+            #$doc->{value}->{id} = $doc->{id};
+            $result->{ $doc->{key} || $c } = $doc->{value};
+        }
         $c++;
     }
     return $result;
