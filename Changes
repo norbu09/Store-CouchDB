@@ -1,5 +1,9 @@
 Revision history for Store-CouchDB
 
+1.10    2011-07-29T20:20:47
+        reset the method DELETE after a delete just to be sure nothing
+        unwanted happens
+
 1.9     2011-04-28T15:14:15
         added support for include_docs=true view calls
 
