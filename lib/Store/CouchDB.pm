@@ -245,6 +245,7 @@ sub del_doc {
     $self->method('DELETE');
     $path = $self->db . '/' . $id . '?rev=' . $rev;
     my $res = $self->_call($path);
+    $self->method('GET');
     return $res->{rev} || undef;
 
 }
