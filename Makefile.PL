@@ -5,7 +5,7 @@ all_from 'lib/Store/CouchDB.pm';
 author   q{Lenz Gschwendtner <norbu09@cpan.org>};
 license  'perl';
 
-requires 'Mouse';
+requires 'Any::Moose';
 requires 'JSON';
 requires 'LWP::UserAgent';
 requires 'URI';
