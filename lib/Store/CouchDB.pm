@@ -1,6 +1,6 @@
 package Store::CouchDB;
 
-use Mouse;
+use Any::Moose;
 use JSON;
 use LWP::UserAgent;
 use URI;
@@ -51,6 +51,12 @@ has 'debug' => (
     lazy      => 1,
     predicate => 'is_debug',
     clearer   => 'no_debug',
+);
+
+has 'url_encode' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0
 );
 
 has 'host' => (
@@ -523,6 +529,9 @@ sub _make_view_path {
     if ( $data->{opts} ) {
         my @opts;
         foreach my $opt ( keys %{ $data->{opts} } ) {
+            if($self->url_encode){
+                $data->{opts}->{$opt} =~ s/\+/%2B/g;
+            }
             push( @opts, $opt . '=' . $data->{opts}->{$opt} );
         }
         my $_opt = join( '&', @opts );
