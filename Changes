@@ -1,5 +1,9 @@
 Revision history for Store-CouchDB
 
+1.11    2011-08-16T15:47:58
+        - added url_encode to encode option parameters with a '+'
+        - changed to Any::Moose
+
 1.10    2011-07-29T20:20:47
         reset the method DELETE after a delete just to be sure nothing
         unwanted happens
