@@ -47,59 +47,63 @@ our $VERSION = '1.11';
 
 has 'debug' => (
     is        => 'rw',
-    default   => sub { },
+    isa       => 'Bool',
+    default   => sub { 0 },
     lazy      => 1,
     predicate => 'is_debug',
     clearer   => 'no_debug',
 );
 
 has 'url_encode' => (
-    is => 'rw',
-    isa => 'Bool',
-    default => 0
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
 );
 
 has 'host' => (
     is       => 'rw',
+    isa      => 'Str',
     required => 1,
-    default  => sub { 'localhost' }
-);
+    default  => sub { 'localhost' });
 
 has 'port' => (
     is       => 'rw',
+    isa      => 'Int',
     required => 1,
-    default  => sub { '5984' }
-);
+    default  => sub { 5984 });
 
 has 'db' => (
-    is       => 'rw',
-    required => 1,
-    default  => sub { '' }
+    is        => 'rw',
+    isa       => 'Str',
+    required  => 1,
+    lazy      => 1,
+    default   => sub { },
+    predicate => 'has_db',
 );
 
 has 'user' => (
-    is => 'rw',
+    is  => 'rw',
+    isa => 'Str',
 );
 
 has 'pass' => (
-    is => 'rw',
+    is  => 'rw',
+    isa => 'Str',
 );
 
 has 'method' => (
     is       => 'rw',
     required => 1,
-    default  => sub { 'GET' }
-);
+    default  => sub { 'GET' });
 
-has 'err' => (
+has 'error' => (
     is        => 'rw',
-    predicate => 'has_err',
+    predicate => 'has_error',
 );
 
 has 'purge_limit' => (
-    is        => 'rw',
-    default   => sub  { 5000 }
-);
+    is      => 'rw',
+    default => sub { 5000 });
 
 =head1 FUNCTIONS
 
@@ -135,7 +139,7 @@ The password for the user to authenticate with. required if user is given.
 
 This is internal and sets the request method to be used (GET|POST)
 
-=head3 err
+=head3 error
 
 This is set if an error has occured and can be called to get the last
 error with the 'has_error' predicate.
@@ -155,10 +159,13 @@ The get_doc call returns a document by its ID
 =cut
 
 sub get_doc {
-    my ( $self, $data ) = @_;
-    confess "Document ID not defiend" unless $data->{id};
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    $self->_check_db;
+    confess "Document ID not defined" unless $data->{id};
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
     my $path = $self->db . '/' . $data->{id};
     return $self->_call($path);
@@ -174,16 +181,20 @@ reference.
 =cut
 
 sub get_design_docs {
-    my ( $self, $data ) = @_;
-    if ( $data && $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    if ($data && $data->{dbname}) {
+        $self->db($data->{dbname});
     }
-    my $path = $self->db . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
+    $self->_check_db;
+
+    my $path = $self->db
+        . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
     $self->method('GET');
     my $res = $self->_call($path);
     return unless $res->{rows}->[0];
     my @design;
-    foreach my $_design (@{$res->{rows}}){
+    foreach my $_design (@{ $res->{rows} }) {
         my ($_d, $name) = split(/\//, $_design->{key}, 2);
         push(@design, $name);
     }
@@ -202,14 +213,18 @@ just a wrapper for put_doc.
 =cut
 
 sub put_doc {
-    my ( $self, $data ) = @_;
-    confess "Document not defiend" unless $data->{doc};
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    confess "Document not defined" unless $data->{doc};
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
+    $self->_check_db;
+
     my $path;
     my $method = $self->method();
-    if ( $data->{doc}->{_id} ) {
+    if ($data->{doc}->{_id}) {
         $self->method('PUT');
         $path = $self->db . '/' . $data->{doc}->{_id};
         delete $data->{doc}->{_id};
@@ -218,7 +233,7 @@ sub put_doc {
         $self->method('POST');
         $path = $self->db;
     }
-    my $res = $self->_call( $path, $data->{doc} );
+    my $res = $self->_call($path, $data->{doc});
     $self->method($method);
     return $res->{id} || undef;
 }
@@ -235,19 +250,24 @@ document, find the latest revision and delete the document.
 =cut
 
 sub del_doc {
-    my ( $self, $data ) = @_;
+    my ($self, $data) = @_;
+
     my $id  = $data->{id}  || $data->{_id};
     my $rev = $data->{rev} || $data->{_rev};
-    confess "Document ID not defiend"       unless $id;
+
+    confess "Document ID not defined" unless $id;
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
+    }
+    $self->_check_db;
+
     if (!$rev) {
-        my $doc = $self->get_doc({id => $id});
+        my $doc = $self->get_doc({ id => $id });
         $rev = $doc->{_rev};
     }
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
-    }
+
     my $path;
-    confess "Database not defiend" unless $self->db;
     $self->method('DELETE');
     $path = $self->db . '/' . $id . '?rev=' . $rev;
     my $res = $self->_call($path);
@@ -267,14 +287,18 @@ discouraged to use and may disappear in a later version.
 =cut
 
 sub update_doc {
-    my ( $self, $data ) = @_;
-    confess "Document not defiend" unless $data->{doc};
-    if ( $data->{name} ) {
+    my ($self, $data) = @_;
+
+    confess "Document not defined" unless $data->{doc};
+
+    if ($data->{name}) {
         $data->{doc}->{_id} = $data->{name};
     }
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
+
     return $self->put_doc($data);
 }
 
@@ -291,18 +315,20 @@ _id and _rev fields and saves it back as a new document.
 =cut
 
 sub copy_doc {
-    my ( $self, $data ) = @_;
-    confess "Document ID not defiend" unless $data->{id};
+    my ($self, $data) = @_;
+
+    confess "Document ID not defined" unless $data->{id};
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
+    }
 
     # as long as CouchDB does not support automatic document name creation
     # for the copy command we copy the ugly way ...
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
-    }
     my $doc = $self->get_doc($data);
     delete $doc->{_id};
     delete $doc->{_rev};
-    return $self->put_doc( { doc => $doc } );
+    return $self->put_doc({ doc => $doc });
 }
 
 =head2 get_view
@@ -325,22 +351,28 @@ handy for getting a hash structure for several documents in the DB.
 =cut
 
 sub get_view {
-    my ( $self, $data ) = @_;
-    confess "View not defiend" unless $data->{view};
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    confess "View not defined" unless $data->{view};
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
+    $self->_check_db;
+
     my $path = $self->_make_view_path($data);
     my $res  = $self->_call($path);
 
     return unless $res->{rows}->[0];
     my $c = 0;
     my $result;
-    foreach my $doc ( @{ $res->{rows} } ) {
-        if($doc->{doc}){
+    foreach my $doc (@{ $res->{rows} }) {
+        if ($doc->{doc}) {
             $result->{ $doc->{key} || $c } = $doc->{doc};
-        } else {
-        next unless $doc->{value};
+        }
+        else {
+            next unless $doc->{value};
+
             # TODO debug why this crashes from time to time
             #$doc->{value}->{id} = $doc->{id};
             $result->{ $doc->{key} || $c } = $doc->{value};
@@ -366,23 +398,27 @@ handy for getting a hash structure for several documents in the DB.
 =cut
 
 sub get_post_view {
-    my ( $self, $data ) = @_;
-    confess "View not defiend"                            unless $data->{view};
-    confess "No options defiend - use 'get_view' instead" unless $data->{opts};
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    confess "View not defined"                            unless $data->{view};
+    confess "No options defined - use 'get_view' instead" unless $data->{opts};
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
+    $self->_check_db;
+
     my $opts;
-    if ( $data->{opts} ) {
+    if ($data->{opts}) {
         $opts = delete $data->{opts};
     }
-    my $path = $self->_make_view_path($data);
+    my $path   = $self->_make_view_path($data);
     my $method = $self->method();
     $self->method('POST');
-    my $res = $self->_call( $path, $opts );
+    my $res = $self->_call($path, $opts);
     $self->method($method);
     my $result;
-    foreach my $doc ( @{ $res->{rows} } ) {
+    foreach my $doc (@{ $res->{rows} }) {
         next unless $doc->{value};
         $doc->{value}->{id} = $doc->{id};
         $result->{ $doc->{key} } = $doc->{value};
@@ -411,23 +447,29 @@ hash of key/value/id per document.
 =cut
 
 sub get_array_view {
-    my ( $self, $data ) = @_;
-    confess "View not defiend" unless $data->{view};
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    confess "View not defined" unless $data->{view};
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
+    $self->_check_db;
+
     my $path = $self->_make_view_path($data);
     my $res  = $self->_call($path);
     my $result;
-    foreach my $doc ( @{ $res->{rows} } ) {
-        if($doc->{doc}){
-            push( @{$result}, $doc->{doc} );
-        } else {
+    foreach my $doc (@{ $res->{rows} }) {
+        if ($doc->{doc}) {
+            push(@{$result}, $doc->{doc});
+        }
+        else {
             next unless $doc->{value};
-            if(ref($doc->{value}) eq 'HASH'){
+            if (ref($doc->{value}) eq 'HASH') {
                 $doc->{value}->{id} = $doc->{id};
-                push( @{$result}, $doc->{value} );
-            } else {
+                push(@{$result}, $doc->{value});
+            }
+            else {
                 push(@{$result}, $doc);
             }
         }
@@ -447,24 +489,29 @@ the moment.
 =cut
 
 sub purge {
-    my ( $self, $data ) = @_;
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
-    my $path = $self->db . '/_changes?limit='.$self->purge_limit.'&since=0';
+    $self->_check_db;
+
+    my $path = $self->db . '/_changes?limit=' . $self->purge_limit . '&since=0';
     $self->method('GET');
     my $res = $self->_call($path);
     return unless $res->{results}->[0];
     my @del;
     $self->method('POST');
     my $resp;
-    foreach my $_del (@{$res->{results}}){
+
+    foreach my $_del (@{ $res->{results} }) {
         next unless ($_del->{deleted} and ($_del->{deleted} eq 'true'));
         my $opts = {
-        #purge_seq => $_del->{seq},
-            $_del->{id} => [$_del->{changes}->[0]->{rev}],
+
+            #purge_seq => $_del->{seq},
+            $_del->{id} => [ $_del->{changes}->[0]->{rev} ],
         };
-        $resp->{$_del->{seq}} = $self->_call( $self->db . '/_purge', $opts );
+        $resp->{ $_del->{seq} } = $self->_call($self->db . '/_purge', $opts);
     }
     return $resp;
 }
@@ -479,25 +526,29 @@ view index as well.
 =cut
 
 sub compact {
-    my ( $self, $data ) = @_;
-    if ( $data->{dbname} ) {
-        $self->db( $data->{dbname} );
+    my ($self, $data) = @_;
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
     }
+    $self->_check_db;
+
     my $res;
-    if($data->{purge}){
+    if ($data->{purge}) {
         $res->{purge} = $self->purge();
     }
-    if($data->{view_compact}){
+    if ($data->{view_compact}) {
         $self->method('POST');
-        $res->{view_compact} = $self->_call( $self->db . '/_view_cleanup' );
+        $res->{view_compact} = $self->_call($self->db . '/_view_cleanup');
         my $design = $self->get_design_docs();
         $self->method('POST');
-        foreach my $doc (@{$design}){
-            $res->{$doc . '_compact'} = $self->_call( $self->db . '/_compact/' . $doc );
+        foreach my $doc (@{$design}) {
+            $res->{ $doc . '_compact' } =
+                $self->_call($self->db . '/_compact/' . $doc);
         }
     }
     $self->method('POST');
-    $res->{compact} = $self->_call( $self->db . '/_compact' );
+    $res->{compact} = $self->_call($self->db . '/_compact');
 
     return $res;
 }
@@ -512,36 +563,42 @@ object. I use it frequently with sections of config files.
 =cut
 
 sub config {
-    my ( $self, $data ) = @_;
+    my ($self, $data) = @_;
 
-    foreach my $key ( keys %{ $data } )
-    {
+    foreach my $key (keys %{$data}) {
         $self->$key($data->{$key}) or confess "$key not defined as property!";
     }
     return $self;
 }
 
+sub _check_db {
+    my ($self) = @_;
+
+    confess "database missing! you must set \$self->db() before running queries"
+        unless $self->has_db;
+}
+
 sub _make_view_path {
-    my ( $self, $data ) = @_;
+    my ($self, $data) = @_;
     $data->{view} =~ s/^\///;
-    my @view = split( /\//, $data->{view}, 2 );
+    my @view = split(/\//, $data->{view}, 2);
     my $path = $self->db . '/_design/' . $view[0] . '/_view/' . $view[1];
-    if ( $data->{opts} ) {
+    if ($data->{opts}) {
         my @opts;
-        foreach my $opt ( keys %{ $data->{opts} } ) {
-            if($self->url_encode){
+        foreach my $opt (keys %{ $data->{opts} }) {
+            if ($self->url_encode) {
                 $data->{opts}->{$opt} =~ s/\+/%2B/g;
             }
-            push( @opts, $opt . '=' . $data->{opts}->{$opt} );
+            push(@opts, $opt . '=' . $data->{opts}->{$opt});
         }
-        my $_opt = join( '&', @opts );
+        my $_opt = join('&', @opts);
         $path .= '?' . $_opt;
     }
     return $path;
 }
 
 sub _call {
-    my ( $self, $path, $content ) = @_;
+    my ($self, $path, $content) = @_;
     my $uri = 'http://';
     $uri .= $self->user . ':' . $self->pass . '@'
         if ($self->user and $self->pass);
@@ -549,22 +606,26 @@ sub _call {
     print STDERR "URI: $uri\n" if $self->is_debug;
 
     my $req = HTTP::Request->new();
-    $req->method( $self->method );
+    $req->method($self->method);
     $req->uri($uri);
 
-    $req->content( fix_latin( to_json($content, {allow_blessed => 1, convert_blessed => 1}), bytes_only => 1 ) )
-      if ($content);
+    $req->content(
+        fix_latin(
+            to_json($content, { allow_blessed => 1, convert_blessed => 1 }),
+            bytes_only => 1
+        )) if ($content);
 
-    my $ua  = LWP::UserAgent->new();
+    my $ua = LWP::UserAgent->new();
+
     # FIXME set the content type to application/json
     $ua->default_header('Content-Type' => "application/json");
     my $res = $ua->request($req);
     print STDERR "Result: " . $res->decoded_content . "\n" if $self->is_debug;
-    if ( $res->is_success ) {
-        return from_json( $res->decoded_content, { allow_nonref => 1 } );
+    if ($res->is_success) {
+        return from_json($res->decoded_content, { allow_nonref => 1 });
     }
     else {
-        $self->err( $res->status_line );
+        $self->error($res->status_line);
     }
     return;
 }
