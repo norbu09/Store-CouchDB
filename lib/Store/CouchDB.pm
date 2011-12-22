@@ -1,11 +1,9 @@
 package Store::CouchDB;
 
+use feature 'switch';
 use Any::Moose;
 use JSON;
 use LWP::UserAgent;
-use URI;
-use Data::Dumper;
-use Encoding::FixLatin qw(fix_latin);
 
 =head1 NAME
 
@@ -13,7 +11,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 1.12.11.11.10.9.8.8
+Version 1.13
 
 =cut
 
@@ -43,21 +41,19 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 has 'debug' => (
-    is        => 'rw',
-    isa       => 'Bool',
-    default   => sub { 0 },
-    lazy      => 1,
-    predicate => 'is_debug',
-    clearer   => 'no_debug',
+    is      => 'rw',
+    isa     => 'Bool',
+    default => sub { 0 },
+    lazy    => 1,
 );
 
 has 'url_encode' => (
     is      => 'rw',
     isa     => 'Bool',
-    default => 0,
+    default => sub { 0 },
 );
 
 has 'host' => (
@@ -99,6 +95,7 @@ has 'method' => (
 has 'error' => (
     is        => 'rw',
     predicate => 'has_error',
+    clearer   => 'clear_debug',
 );
 
 has 'purge_limit' => (
@@ -233,8 +230,11 @@ sub put_doc {
         $self->method('POST');
         $path = $self->db;
     }
+
     my $res = $self->_call($path, $data->{doc});
     $self->method($method);
+
+    return ($res->{id} || undef, $res->{rev} || undef) if defined wantarray;
     return $res->{id} || undef;
 }
 
@@ -272,8 +272,9 @@ sub del_doc {
     $path = $self->db . '/' . $id . '?rev=' . $rev;
     my $res = $self->_call($path);
     $self->method('GET');
-    return $res->{rev} || undef;
 
+    return ($res->{id} || undef, $res->{rev} || undef) if defined wantarray;
+    return $res->{rev} || undef;
 }
 
 =head2 update_doc
@@ -580,49 +581,59 @@ sub _check_db {
 
 sub _make_view_path {
     my ($self, $data) = @_;
+
     $data->{view} =~ s/^\///;
     my @view = split(/\//, $data->{view}, 2);
     my $path = $self->db . '/_design/' . $view[0] . '/_view/' . $view[1];
+
     if ($data->{opts}) {
-        my @opts;
+        my $path .= '?';
         foreach my $opt (keys %{ $data->{opts} }) {
+            given ($opt) {
+                when ([ 'key', 'startkey', 'endkey' ]) {
+                    $data->{opts}->{$opt} = '"' . $data->{opts}->{$opt} . '"'
+                        unless ($data->{opts}->{$opt} =~ m/^"/)
+                }
+            }
             if ($self->url_encode) {
                 $data->{opts}->{$opt} =~ s/\+/%2B/g;
             }
-            push(@opts, $opt . '=' . $data->{opts}->{$opt});
+            $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
         }
-        my $_opt = join('&', @opts);
-        $path .= '?' . $_opt;
+
+        # remove last '&'
+        chop($path);
     }
     return $path;
 }
 
 sub _call {
     my ($self, $path, $content) = @_;
+
+    # cleanup old error
+    $self->clear_error if $self->has_error;
+
     my $uri = 'http://';
     $uri .= $self->user . ':' . $self->pass . '@'
         if ($self->user and $self->pass);
     $uri .= $self->host . ':' . $self->port . '/' . $path;
-    print STDERR "URI: $uri\n" if $self->is_debug;
+    print STDERR "URI: $uri\n" if $self->debug;
 
     my $req = HTTP::Request->new();
     $req->method($self->method);
     $req->uri($uri);
 
     $req->content(
-        fix_latin(
-            to_json($content, { allow_blessed => 1, convert_blessed => 1 }),
-            bytes_only => 1
-        )) if ($content);
+        JSON->new->utf8->allow_blessed->convert_blessed->encode($content))
+        if ($content);
 
     my $ua = LWP::UserAgent->new();
 
-    # FIXME set the content type to application/json
     $ua->default_header('Content-Type' => "application/json");
     my $res = $ua->request($req);
-    print STDERR "Result: " . $res->decoded_content . "\n" if $self->is_debug;
+    print STDERR "Result: " . $res->decoded_content . "\n" if $self->debug;
     if ($res->is_success) {
-        return from_json($res->decoded_content, { allow_nonref => 1 });
+        return JSON->new->utf8->allow_nonref->decode($res->decoded_content);
     }
     else {
         $self->error($res->status_line);
