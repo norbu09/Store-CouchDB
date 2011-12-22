@@ -595,20 +595,19 @@ sub _make_view_path {
                         JSON->new->utf8->allow_nonref->encode(
                         $data->{opts}->{$opt})
                         if (!ref($data->{opts}->{$opt})
-                        and ($data->{opts}->{$opt} !~ m/^["\[]/));
+                        and ($data->{opts}->{$opt} !~ m/^[\["]/));
                 }
             }
+            if ($self->url_encode) {
+                $data->{opts}->{$opt} =~ s/\+/%2B/g;
+            }
+            $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
         }
-        if ($self->url_encode) {
-            $data->{opts}->{$opt} =~ s/\+/%2B/g;
-        }
-        $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
+        # remove last '&'
+        chop($path);
     }
 
-    # remove last '&'
-    chop($path);
-}
-return $path;
+    return $path;
 }
 
 sub _call {
