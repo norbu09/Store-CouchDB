@@ -95,7 +95,7 @@ has 'method' => (
 has 'error' => (
     is        => 'rw',
     predicate => 'has_error',
-    clearer   => 'clear_debug',
+    clearer   => 'clear_error',
 );
 
 has 'purge_limit' => (
@@ -633,7 +633,7 @@ sub _call {
     my $res = $ua->request($req);
     print STDERR "Result: " . $res->decoded_content . "\n" if $self->debug;
     if ($res->is_success) {
-        return JSON->new->utf8->allow_nonref->decode($res->decoded_content);
+        return JSON->new->utf8->allow_nonref->decode($res->content);
     }
     else {
         $self->error($res->status_line);
