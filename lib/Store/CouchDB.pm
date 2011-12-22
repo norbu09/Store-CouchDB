@@ -587,24 +587,28 @@ sub _make_view_path {
     my $path = $self->db . '/_design/' . $view[0] . '/_view/' . $view[1];
 
     if ($data->{opts}) {
-        my $path .= '?';
+        $path .= '?';
         foreach my $opt (keys %{ $data->{opts} }) {
             given ($opt) {
                 when ([ 'key', 'startkey', 'endkey' ]) {
-                    $data->{opts}->{$opt} = '"' . $data->{opts}->{$opt} . '"'
-                        unless ($data->{opts}->{$opt} =~ m/^"/)
+                    $data->{opts}->{$opt} =
+                        JSON->new->utf8->allow_nonref->encode(
+                        $data->{opts}->{$opt})
+                        if (!ref($data->{opts}->{$opt})
+                        and ($data->{opts}->{$opt} !~ m/^["\[]/));
                 }
             }
-            if ($self->url_encode) {
-                $data->{opts}->{$opt} =~ s/\+/%2B/g;
-            }
-            $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
         }
-
-        # remove last '&'
-        chop($path);
+        if ($self->url_encode) {
+            $data->{opts}->{$opt} =~ s/\+/%2B/g;
+        }
+        $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
     }
-    return $path;
+
+    # remove last '&'
+    chop($path);
+}
+return $path;
 }
 
 sub _call {
