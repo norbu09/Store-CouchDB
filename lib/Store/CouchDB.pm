@@ -603,6 +603,7 @@ sub _make_view_path {
             }
             $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
         }
+
         # remove last '&'
         chop($path);
     }
