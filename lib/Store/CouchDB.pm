@@ -594,8 +594,8 @@ sub _make_view_path {
                     $data->{opts}->{$opt} =
                         JSON->new->utf8->allow_nonref->encode(
                         $data->{opts}->{$opt})
-                        if (!ref($data->{opts}->{$opt})
-                        and ($data->{opts}->{$opt} !~ m/^[\["]/));
+                        unless (!ref($data->{opts}->{$opt})
+                        and ($data->{opts}->{$opt} =~ m/^[\["]/));
                 }
             }
             if ($self->url_encode) {
