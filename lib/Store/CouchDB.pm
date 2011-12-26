@@ -234,7 +234,7 @@ sub put_doc {
     my $res = $self->_call($path, $data->{doc});
     $self->method($method);
 
-    return ($res->{id} || undef, $res->{rev} || undef) if defined wantarray;
+    return ($res->{id} || undef, $res->{rev} || undef) if wantarray;
     return $res->{id} || undef;
 }
 
@@ -273,7 +273,7 @@ sub del_doc {
     my $res = $self->_call($path);
     $self->method('GET');
 
-    return ($res->{id} || undef, $res->{rev} || undef) if defined wantarray;
+    return ($res->{id} || undef, $res->{rev} || undef) if wantarray;
     return $res->{rev} || undef;
 }
 
