@@ -1,5 +1,11 @@
 Revision history for Store-CouchDB
 
+1.13    2011-12-29T13:09:23
+        - rewrite of optional keys handling using JSON encoding
+        - proper error handling
+        - enables binmode utf8 for debug printing
+        - let JSON handle utf8 stuff instead of extra fix_latin()
+
 1.12    2011-11-23T17:20:24
         - made "db" attribute a lazy require, checking before each _call() for
           existence
