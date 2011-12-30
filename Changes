@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+1.14    2011-12-31T11:58:34
+        bugfix: skip JSON encoding if option key is just numbers
+
 1.13    2011-12-29T13:09:23
         - rewrite of optional keys handling using JSON encoding
         - proper error handling
