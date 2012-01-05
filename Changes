@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+1.15    2012-01-05T18:06:04
+        cleared last key encoding issues using uri_escape
+
 1.14    2011-12-31T11:58:34
         bugfix: skip JSON encoding if option key is just numbers
 
