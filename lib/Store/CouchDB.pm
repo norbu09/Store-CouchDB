@@ -4,6 +4,7 @@ use feature 'switch';
 use Any::Moose;
 use JSON;
 use LWP::UserAgent;
+use URI::Escape;
 
 =head1 NAME
 
@@ -11,7 +12,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 1.14.14
+Version 1.15
 
 =cut
 
@@ -41,19 +42,13 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '1.14';
+our $VERSION = '1.15';
 
 has 'debug' => (
     is      => 'rw',
     isa     => 'Bool',
     default => sub { 0 },
     lazy    => 1,
-);
-
-has 'url_encode' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => sub { 0 },
 );
 
 has 'host' => (
@@ -600,9 +595,7 @@ sub _make_view_path {
                             or $data->{opts}->{$opt} =~ m/^\d+$/));
                 }
             }
-            if ($self->url_encode) {
-                $data->{opts}->{$opt} =~ s/\+/%2B/g;
-            }
+            $data->{opts}->{$opt} = uri_escape($data->{opts}->{$opt});
             $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
         }
 
