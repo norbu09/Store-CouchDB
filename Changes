@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+1.16    2012-01-09T18:27:12
+        always JSON encode, no exceptions. anything else breaks behaviour
+
 1.15    2012-01-05T18:06:04
         cleared last key encoding issues using uri_escape
 

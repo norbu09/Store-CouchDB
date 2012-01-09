@@ -12,7 +12,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 1.15.15
+Version 1.16.16
 
 =cut
 
@@ -42,7 +42,7 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '1.15';
+our $VERSION = '1.16';
 
 has 'debug' => (
     is      => 'rw',
@@ -588,11 +588,7 @@ sub _make_view_path {
                 when ([ 'key', 'startkey', 'endkey' ]) {
                     $data->{opts}->{$opt} =
                         JSON->new->utf8->allow_nonref->encode(
-                        $data->{opts}->{$opt})
-                        unless (
-                        !ref($data->{opts}->{$opt})
-                        and (  $data->{opts}->{$opt} =~ m/^[\["]/
-                            or $data->{opts}->{$opt} =~ m/^\d+$/));
+                        $data->{opts}->{$opt});
                 }
             }
             $data->{opts}->{$opt} = uri_escape($data->{opts}->{$opt});
