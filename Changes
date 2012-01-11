@@ -1,5 +1,9 @@
 Revision history for Store-CouchDB
 
+2.0     2012-01-12T09:53:26
+        - cleaned up tests before writing more of them
+        - bumped version number so CPAN picks up the changes
+
 1.16    2012-01-09T18:27:12
         always JSON encode, no exceptions. anything else breaks behaviour
 

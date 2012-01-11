@@ -17,7 +17,6 @@ MANIFEST
 MANIFEST.SKIP
 README
 t/00-load.t
-t/boilerplate.t
 t/client.pl
 t/pod-coverage.t
 t/pod.t
