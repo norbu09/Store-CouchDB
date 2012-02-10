@@ -12,7 +12,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 2.0.0.16.16
+Version 2.1.0.0.16.16
 
 =cut
 
@@ -42,7 +42,7 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '2.0';
+our $VERSION = '2.1';
 
 has 'debug' => (
     is      => 'rw',
@@ -420,6 +420,44 @@ sub get_post_view {
         $result->{ $doc->{key} } = $doc->{value};
     }
     return $result;
+}
+
+=head2 get_view_array
+
+Same as get_array_view only returns a real array. Use either one
+depending on your use case and convenience.
+
+=cut
+
+sub get_view_array {
+    my ($self, $data) = @_;
+
+    confess "View not defined" unless $data->{view};
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
+    }
+    $self->_check_db;
+
+    my $path = $self->_make_view_path($data);
+    my $res  = $self->_call($path);
+    my @result;
+    foreach my $doc (@{ $res->{rows} }) {
+        if ($doc->{doc}) {
+            push(@result, $doc->{doc});
+        }
+        else {
+            next unless $doc->{value};
+            if (ref($doc->{value}) eq 'HASH') {
+                $doc->{value}->{id} = $doc->{id};
+                push(@result, $doc->{value});
+            }
+            else {
+                push(@result, $doc);
+            }
+        }
+    }
+    return \@result;
 }
 
 =head2 get_array_view

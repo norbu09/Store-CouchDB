@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+2.1     2012-02-10T17:02:33
+        added a get_view_array call
+
 2.0     2012-01-12T09:53:26
         - cleaned up tests before writing more of them
         - bumped version number so CPAN picks up the changes
