@@ -361,7 +361,7 @@ sub get_view {
 
     return unless $res->{rows}->[0];
     my $c = 0;
-    my $result;
+    my $result = {};
     foreach my $doc (@{ $res->{rows} }) {
         if ($doc->{doc}) {
             $result->{ $doc->{key} || $c } = $doc->{doc};
@@ -369,11 +369,12 @@ sub get_view {
         else {
             next unless $doc->{value};
             if(ref $doc->{key} eq 'ARRAY'){
-                _hash($result, $doc->{value}, $doc->{key});
+                _hash($result, $doc->{value}, @{$doc->{key}});
+            } else {
+                # TODO debug why this crashes from time to time
+                #$doc->{value}->{id} = $doc->{id};
+                $result->{ $doc->{key} || $c } = $doc->{value};
             }
-            # TODO debug why this crashes from time to time
-            #$doc->{value}->{id} = $doc->{id};
-            $result->{ $doc->{key} || $c } = $doc->{value};
         }
         $c++;
     }
