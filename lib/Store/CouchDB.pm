@@ -368,7 +368,9 @@ sub get_view {
         }
         else {
             next unless $doc->{value};
-
+            if(ref $doc->{key} eq 'ARRAY'){
+                _hash($result, $doc->{value}, $doc->{key});
+            }
             # TODO debug why this crashes from time to time
             #$doc->{value}->{id} = $doc->{id};
             $result->{ $doc->{key} || $c } = $doc->{value};
@@ -674,6 +676,16 @@ sub _call {
         $self->error($res->status_line);
     }
     return;
+}
+
+sub _hash {
+    my ($head, $val, @tail) = @_;
+    print Dumper($head, $val, @tail);
+    if($#tail == 0){
+        return $head->{shift(@tail)} = $val;
+    } else {
+        return _hash($head->{shift(@tail)} //= {}, $val, @tail);
+    }
 }
 
 =head1 EXPORT
