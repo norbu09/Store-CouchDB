@@ -680,7 +680,6 @@ sub _call {
 
 sub _hash {
     my ($head, $val, @tail) = @_;
-    print Dumper($head, $val, @tail);
     if($#tail == 0){
         return $head->{shift(@tail)} = $val;
     } else {
