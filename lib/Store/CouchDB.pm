@@ -628,7 +628,7 @@ sub _make_view_path {
             given ($opt) {
                 when ([ 'key', 'startkey', 'endkey' ]) {
                     $data->{opts}->{$opt} =
-                        JSON->new->utf8->allow_nonref->encode(
+                        JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed->encode(
                         $data->{opts}->{$opt});
                 }
             }
