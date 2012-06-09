@@ -12,7 +12,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 2.2.1.0.0.16.16
+Version 2.2.2.1.0.0.16.16
 
 =cut
 
