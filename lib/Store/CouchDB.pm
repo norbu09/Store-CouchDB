@@ -12,7 +12,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 2.2.2.1.0.0.16.16
+Version 2.2
 
 =cut
 
@@ -655,7 +655,7 @@ sub _call {
     $uri .= $self->user . ':' . $self->pass . '@'
         if ($self->user and $self->pass);
     $uri .= $self->host . ':' . $self->port . '/' . $path;
-    print STDERR "URI: $uri\n" if $self->debug;
+    print STDERR __PACKAGE__ . ": URI: $uri\n" if $self->debug;
 
     my $req = HTTP::Request->new();
     $req->method($self->method);
@@ -669,7 +669,10 @@ sub _call {
 
     $ua->default_header('Content-Type' => "application/json");
     my $res = $ua->request($req);
-    print STDERR "Result: " . $res->decoded_content . "\n" if $self->debug;
+    if ($self->debug) {
+        require Data::Dumper;
+        print STDERR __PACKAGE__ . ": Result: " . Dumper($res->decoded_content);
+    }
     if ($res->is_success) {
         return JSON->new->utf8->allow_nonref->decode($res->content);
     }
