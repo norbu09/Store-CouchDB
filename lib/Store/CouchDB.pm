@@ -360,7 +360,7 @@ sub get_view {
     my $res  = $self->_call($path);
 
     return unless $res->{rows}->[0];
-    my $c = 0;
+    my $c      = 0;
     my $result = {};
     foreach my $doc (@{ $res->{rows} }) {
         if ($doc->{doc}) {
@@ -368,9 +368,10 @@ sub get_view {
         }
         else {
             next unless $doc->{value};
-            if(ref $doc->{key} eq 'ARRAY'){
-                _hash($result, $doc->{value}, @{$doc->{key}});
-            } else {
+            if (ref $doc->{key} eq 'ARRAY') {
+                _hash($result, $doc->{value}, @{ $doc->{key} });
+            }
+            else {
                 # TODO debug why this crashes from time to time
                 #$doc->{value}->{id} = $doc->{id};
                 $result->{ $doc->{key} || $c } = $doc->{value};
@@ -628,8 +629,8 @@ sub _make_view_path {
             given ($opt) {
                 when ([ 'key', 'startkey', 'endkey' ]) {
                     $data->{opts}->{$opt} =
-                        JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed->encode(
-                        $data->{opts}->{$opt});
+                        JSON->new->utf8->allow_nonref->allow_blessed
+                        ->convert_blessed->encode($data->{opts}->{$opt});
                 }
             }
             $data->{opts}->{$opt} = uri_escape($data->{opts}->{$opt});
@@ -671,7 +672,9 @@ sub _call {
     my $res = $ua->request($req);
     if ($self->debug) {
         require Data::Dumper;
-        print STDERR __PACKAGE__ . ": Result: " . Dumper($res->decoded_content);
+        print STDERR __PACKAGE__
+            . ": Result: "
+            . Data::Dumper::Dumper($res->decoded_content);
     }
     if ($res->is_success) {
         return JSON->new->utf8->allow_nonref->decode($res->content);
@@ -684,10 +687,11 @@ sub _call {
 
 sub _hash {
     my ($head, $val, @tail) = @_;
-    if($#tail == 0){
-        return $head->{shift(@tail)} = $val;
-    } else {
-        return _hash($head->{shift(@tail)} //= {}, $val, @tail);
+    if ($#tail == 0) {
+        return $head->{ shift(@tail) } = $val;
+    }
+    else {
+        return _hash($head->{ shift(@tail) } //= {}, $val, @tail);
     }
 }
 
