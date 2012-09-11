@@ -97,6 +97,12 @@ has 'purge_limit' => (
     is      => 'rw',
     default => sub { 5000 });
 
+has timeout => (
+    is      => 'rw',
+    isa     => 'Int',
+    default => sub { 30 },
+);
+
 =head1 FUNCTIONS
 
 =head2 new
@@ -666,7 +672,7 @@ sub _call {
         JSON->new->utf8->allow_blessed->convert_blessed->encode($content))
         if ($content);
 
-    my $ua = LWP::UserAgent->new();
+    my $ua = LWP::UserAgent->new(timeout => $self->timeout);
 
     $ua->default_header('Content-Type' => "application/json");
     my $res = $ua->request($req);
