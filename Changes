@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+2.3     2012-09-11T17:08:26
+        added a HTTP timeout function (thanks jbn for the request)
+
 2.2     2012-02-21T16:21:12
         WARNING: new composit key handling in get_view
         if get_view gets a composit key in form of an array it will now

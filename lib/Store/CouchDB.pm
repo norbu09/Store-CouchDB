@@ -12,7 +12,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 2.2.2.2
+Version 2.3.3.2.2.2
 
 =cut
 
@@ -42,7 +42,7 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '2.2';
+our $VERSION = '2.3';
 
 has 'debug' => (
     is      => 'rw',
