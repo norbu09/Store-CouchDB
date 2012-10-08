@@ -473,7 +473,7 @@ sub get_view_array {
 =head2 get_array_view
 
 The get_array_view uses GET to call the view and returns an array
-ireference of matched documents. This view functions is the one I use
+reference of matched documents. This view functions is the one I use
 most and has the best support for corner cases.
 
    get_array_view(
