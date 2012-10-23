@@ -1,5 +1,9 @@
 Revision history for Store-CouchDB
 
+2.4     2012-10-23T20:22:15
+        - fixed 5.10 dependency and ported that code back to 5.8
+        - fixed type (thanks to weltonrodrigo)
+
 2.3     2012-09-11T17:08:26
         added a HTTP timeout function (thanks jbn for the request)
 
