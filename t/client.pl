@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use lib 'lib';
 use Store::CouchDB;
 use Data::Dumper;
 
@@ -37,12 +38,15 @@ my $record = {
 #$doc->{_rev} = '1-1432586889';
 
 my $req = {
-    dbname => 'tlds',
-    view     => 'prices/usd',
-    opts => {'keys' => ["ac","ad"]},
+    dbname => 'post_test',
+    id => 'da860dcc8ab87f28a50282bbe801ebaf',
+    file => 'helo world2',
+    content_type => 'text/plain',
+    filename => 'test.txt'
 };
-my $res = $db->get_post_view($req);
-#my $res = $db->copy_doc($req);
+#my $res = $db->get_post_view($req);
+#my $res = $db->put_file($req);
+my $res = $db->get_file($req);
 
 print Dumper($res);
 if ( $db->has_err ) {
