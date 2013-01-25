@@ -641,6 +641,7 @@ sub put_file {
 
     my $id  = $data->{id}  || $data->{doc}->{_id};
     my $rev = $data->{rev} || $data->{doc}->{_rev};
+    my $method = $self->method();
 
     if (!$rev and $id) {
         $rev = $self->head_doc({ id => $id });
@@ -653,11 +654,11 @@ sub put_file {
 
     $self->method('PUT');
     my $res = $self->_call($path, $data->{file}, $data->{content_type});
+    $self->method($method);
 
     return ($res->{id} || undef, $res->{rev} || undef) if wantarray;
     return $res->{id} || undef;
 }
-
 
 =head2 get_file
 
