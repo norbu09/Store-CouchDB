@@ -11,7 +11,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 2.5
+Version 2.5.5
 
 =cut
 
