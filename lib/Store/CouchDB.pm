@@ -11,7 +11,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 2.4.3
+Version 2.5
 
 =cut
 
@@ -41,7 +41,7 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '2.4';
+our $VERSION = '2.5';
 
 has 'debug' => (
     is      => 'rw',
@@ -96,10 +96,18 @@ has 'purge_limit' => (
     is      => 'rw',
     default => sub { 5000 });
 
-has timeout => (
+has 'timeout' => (
     is      => 'rw',
     isa     => 'Int',
     default => sub { 30 },
+);
+
+has 'json' => (
+    is      => 'rw',
+    isa     => 'JSON',
+    default => sub {
+        JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed;
+    },
 );
 
 =head1 FUNCTIONS
@@ -185,7 +193,7 @@ sub head_doc {
     $self->method('HEAD');
 
     my $path = $self->db . '/' . $data->{id};
-    my $rev = $self->_call($path);
+    my $rev  = $self->_call($path);
     $rev =~ s/"//g;
     return $rev;
 }
@@ -386,6 +394,7 @@ sub get_view {
     my $res  = $self->_call($path);
 
     return unless $res->{rows}->[0];
+
     my $c      = 0;
     my $result = {};
     foreach my $doc (@{ $res->{rows} }) {
@@ -393,7 +402,7 @@ sub get_view {
             $result->{ $doc->{key} || $c } = $doc->{doc};
         }
         else {
-            next unless $doc->{value};
+            next unless exists $doc->{value};
             if (ref $doc->{key} eq 'ARRAY') {
                 _hash($result, $doc->{value}, @{ $doc->{key} });
             }
@@ -440,15 +449,18 @@ sub get_post_view {
     }
     my $path   = $self->_make_view_path($data);
     my $method = $self->method();
+
     $self->method('POST');
     my $res = $self->_call($path, $opts);
     $self->method($method);
+
     my $result;
     foreach my $doc (@{ $res->{rows} }) {
-        next unless $doc->{value};
+        next unless exists $doc->{value};
         $doc->{value}->{id} = $doc->{id};
         $result->{ $doc->{key} } = $doc->{value};
     }
+
     return $result;
 }
 
@@ -477,7 +489,7 @@ sub get_view_array {
             push(@result, $doc->{doc});
         }
         else {
-            next unless $doc->{value};
+            next unless exists $doc->{value};
             if (ref($doc->{value}) eq 'HASH') {
                 $doc->{value}->{id} = $doc->{id};
                 push(@result, $doc->{value});
@@ -522,13 +534,14 @@ sub get_array_view {
 
     my $path = $self->_make_view_path($data);
     my $res  = $self->_call($path);
+
     my $result;
     foreach my $doc (@{ $res->{rows} }) {
         if ($doc->{doc}) {
             push(@{$result}, $doc->{doc});
         }
         else {
-            next unless $doc->{value};
+            next unless exists $doc->{value};
             if (ref($doc->{value}) eq 'HASH') {
                 $doc->{value}->{id} = $doc->{id};
                 push(@{$result}, $doc->{value});
@@ -674,7 +687,7 @@ sub get_file {
     }
     $self->_check_db;
     confess "Document ID not defined" unless $data->{id};
-    confess "File name not defined" unless $data->{filename};
+    confess "File name not defined"   unless $data->{filename};
 
     my $path = join('/', $self->db, $data->{id}, $data->{filename});
     return $self->_call($path);
@@ -717,8 +730,7 @@ sub _make_view_path {
         foreach my $opt (keys %{ $data->{opts} }) {
             if ($opt =~ /key/) {
                 $data->{opts}->{$opt} =
-                    JSON->new->utf8->allow_nonref->allow_blessed
-                    ->convert_blessed->encode($data->{opts}->{$opt});
+                    $self->json->encode($data->{opts}->{$opt});
             }
             $data->{opts}->{$opt} = uri_escape($data->{opts}->{$opt});
             $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
@@ -752,8 +764,7 @@ sub _call {
     $req->content((
               $ct
             ? $content
-            : JSON->new->utf8->allow_blessed->convert_blessed->encode( $content))) 
-            if ($content);
+            : $self->json->encode($content))) if ($content);
 
     my $ua = LWP::UserAgent->new(timeout => $self->timeout);
 
@@ -775,9 +786,12 @@ sub _call {
     }
     elsif ($res->is_success) {
         my $result;
-        eval { $result = JSON->new->utf8->allow_nonref->decode($res->content) };
+        eval { $result = $self->json->decode($res->content) };
         return $result unless $@;
-        return { file => $res->decoded_content, content_type => $res->content_type };
+        return {
+            file         => $res->decoded_content,
+            content_type => $res->content_type
+        };
     }
     else {
         $self->error($res->status_line);

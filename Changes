@@ -1,5 +1,9 @@
 Revision history for Store-CouchDB
 
+2.5     2013-02-04T19:56:14
+        - fixed bug where null value keys are left out of the response
+        - improved speed by reusing JSON object created once on load
+
 2.4     2012-10-23T20:22:15
         - fixed 5.10 dependency and ported that code back to 5.8
         - fixed type (thanks to weltonrodrigo)
