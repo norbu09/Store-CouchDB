@@ -1,5 +1,9 @@
 Revision history for Store-CouchDB
 
+2.6     2013-02-22T10:11:22
+        bugfix: don't ever fiddle with contents of $data in _make_view_path,
+        because it breaks reusing the same view later
+
 2.5     2013-02-04T19:56:14
         - fixed bug where null value keys are left out of the response
         - improved speed by reusing JSON object created once on load

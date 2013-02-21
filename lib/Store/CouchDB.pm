@@ -11,7 +11,7 @@ Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-Version 2.5.5
+Version 2.6
 
 =cut
 
@@ -41,7 +41,7 @@ brilliant Encoding::FixLatin module to fix this on the fly.
 
 =cut
 
-our $VERSION = '2.5';
+our $VERSION = '2.6';
 
 has 'debug' => (
     is      => 'rw',
@@ -721,19 +721,20 @@ sub _check_db {
 sub _make_view_path {
     my ($self, $data) = @_;
 
-    $data->{view} =~ s/^\///;
-    my @view = split(/\//, $data->{view}, 2);
+    my $view = $data->{view};
+    $view =~ s/^\///;
+    my @view = split(/\//, $view, 2);
     my $path = $self->db . '/_design/' . $view[0] . '/_view/' . $view[1];
 
-    if ($data->{opts}) {
+    if (keys %{ $data->{opts} }) {
         $path .= '?';
-        foreach my $opt (keys %{ $data->{opts} }) {
-            if ($opt =~ /key/) {
-                $data->{opts}->{$opt} =
-                    $self->json->encode($data->{opts}->{$opt});
+        foreach my $key (keys %{ $data->{opts} }) {
+            my $value = $data->{opts}->{$key};
+            if ($key =~ m/key/) {
+                $value = $self->json->encode($value);
             }
-            $data->{opts}->{$opt} = uri_escape($data->{opts}->{$opt});
-            $path .= $opt . '=' . $data->{opts}->{$opt} . '&';
+            $value = uri_escape($value);
+            $path .= $key . '=' . $value . '&';
         }
 
         # remove last '&'
