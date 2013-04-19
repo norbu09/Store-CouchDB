@@ -62,6 +62,13 @@ has 'port' => (
     required => 1,
     default  => sub { 5984 });
 
+has 'ssl' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => sub { 0 },
+    lazy    => 1,
+);
+
 has 'db' => (
     is        => 'rw',
     isa       => 'Str',
@@ -127,6 +134,10 @@ The host to use. Defaults to 'localhost'
 =head3 port
 
 The port to use. Defaults to '5984'
+
+=head4 ssl
+
+Connect to host via SSL/TLS. Defaults to '0'
 
 =head3 db
 
@@ -752,7 +763,7 @@ sub _call {
     # cleanup old error
     $self->clear_error if $self->has_error;
 
-    my $uri = 'http://';
+    my $uri = ($self->ssl) ? 'https://' : 'http://';
     $uri .= $self->user . ':' . $self->pass . '@'
         if ($self->user and $self->pass);
     $uri .= $self->host . ':' . $self->port . '/' . $path;
