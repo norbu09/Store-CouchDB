@@ -40,6 +40,10 @@ FUNCTIONS
 
        The port to use. Defaults to ’5984’
 
+       ssl
+
+       Connect to host via SSL/TLS. Defaults to ’0’
+
        db
 
        The DB to use. This has to be set for all oprations!
