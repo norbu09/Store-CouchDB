@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+2.7     2013-04-20T14:06:44
+        SSL/TLS support added by pmack
+
 2.6     2013-02-22T10:11:22
         bugfix: don't ever fiddle with contents of $data in _make_view_path,
         because it breaks reusing the same view later
