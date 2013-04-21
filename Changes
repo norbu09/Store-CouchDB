@@ -1,5 +1,8 @@
 Revision history for Store-CouchDB
 
+2.8     2013-04-21T17:13:41
+        added 'create_db' to programmatically create databases
+
 2.7     2013-04-20T14:06:44
         SSL/TLS support added by pmack
 
