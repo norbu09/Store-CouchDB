@@ -713,6 +713,29 @@ object. I use it frequently with sections of config files.
 
 =cut
 
+
+=head2 create_db
+
+Create a Couch
+
+    create_db('name')
+
+=cut
+
+sub create_db {
+    my ($self, $db) = @_;
+
+    if($db){
+        $self->db($db);
+    }
+
+    my $method = $self->method();
+    $self->method('PUT');
+    my $res = $self->_call($self->db);
+    $self->method($method);
+    return $res;
+}
+
 sub config {
     my ($self, $data) = @_;
 
