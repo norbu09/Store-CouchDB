@@ -168,20 +168,32 @@ How many documents shall we try to purge. Defaults to 5000
 
 =head2 get_doc
 
-The get_doc call returns a document by its ID
+The get_doc call returns a document by its ID. If no document ID is
+given returns undef
 
     get_doc({id => DOCUMENT_ID, [dbname => DATABASE]})
+
+alternatively this works too
+
+    get_doc('DOCUMENT_ID')
 
 =cut
 
 sub get_doc {
     my ($self, $data) = @_;
 
+    unless(ref $data eq 'HASH'){
+        $data = { id => $data };
+    }
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
     $self->_check_db;
-    confess "Document ID not defined" unless $data->{id};
+    unless($data->{id}){
+        warn "Document ID not defined";
+        return;
+    }
+
 
     my $path = $self->db . '/' . $data->{id};
     return $self->_call($path);
