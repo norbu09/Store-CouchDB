@@ -786,7 +786,7 @@ sub put_file {
     my $rev = $data->{rev} || $data->{doc}->{_rev};
     my $method = $self->method();
 
-    if (!$rev and $id) {
+    if (!$rev && $id) {
         $rev = $self->head_doc({ id => $id });
         print STDERR ">>$rev<<\n";
     }
