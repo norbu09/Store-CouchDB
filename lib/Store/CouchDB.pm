@@ -698,7 +698,7 @@ sub purge {
     my $resp;
 
     foreach my $_del (@{ $res->{results} }) {
-        next unless ($_del->{deleted} and ($_del->{deleted} eq 'true'));
+        next unless (exists $_del->{deleted} and $_del->{deleted});
         my $opts = {
 
             #purge_seq => $_del->{seq},
@@ -940,14 +940,16 @@ sub _call {
         require Data::Dump;
         print STDERR __PACKAGE__
             . ": Result: "
-            . Data::Dump::dump($res->decoded_content);
+            . Data::Dump::dump($res->decoded_content)
+            . $/;
     }
 
     if ($self->method eq 'HEAD') {
         if ($self->debug) {
             print STDERR __PACKAGE__
                 . ": Revision: "
-                . $res->header('ETag') . "\n";
+                . $res->header('ETag')
+                . $/;
         }
         return $res->header('ETag') || undef;
     }
