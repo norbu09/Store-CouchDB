@@ -1,0 +1,302 @@
+=pod
+
+=head1 NAME
+
+Store::CouchDB - Store::CouchDB - a simple CouchDB driver
+
+=head1 VERSION
+
+version 2.9
+
+=head1 SYNOPSIS
+
+Store::CouchDB is a very thin wrapper around CouchDB. It is essentially
+a set of calls I use in production and is by no means a complete
+library, it is just complete enough for the things I need to do. This is
+a grown set of functions that evolved over the last years of using
+CouchDB in various projects and was written originally to be compatible
+with DB::CouchDB. This has long passed and can only be noticed at some
+places.
+
+One of the things I banged my head against for some time is non UTF8
+stuff that somehow enters the system and then breaks CouchDB. I use the
+brilliant Encoding::FixLatin module to fix this on the fly.
+
+    use Store::CouchDB;
+    
+    my $sc = Store::CouchDB->new(host => 'localhost', db => 'your_db');
+    # OR
+    my $sc = Store::CouchDB->new();
+    $sc->config({host => 'localhost', db => 'your_db'});
+    my $array_ref = $db->get_array_view({
+        view   => 'design_doc/view',
+        opts   => { key => $key },
+    });
+
+=head1 ATTRIBUTES
+
+=head2 debug
+
+Sets the class in debug mode
+
+Default: false
+
+=head2 host
+
+Default: localhost
+
+=head2 port
+
+Default: 5984
+
+=head2 ssl
+
+Connect to host using SSL/TLS.
+
+Default: false
+
+=head2 db
+
+The databae name to use. This has to be set for all oprations!
+
+=head2 user
+
+The DB user to authenticate as. optional
+
+=head2 pass
+
+The password for the user to authenticate with. required if user is given.
+
+=head2 method
+
+This is internal and sets the request method to be used (GET|POST)
+
+Default: GET
+
+=head2 error
+
+This is set if an error has occured and can be called to get the last
+error with the 'has_error' predicate.
+
+    $sc->has_error
+
+Error string if there was an error
+
+=head2 purge_limit
+
+How many documents shall we try to purge.
+
+Default: 5000
+
+=head2 timeout
+
+Timeout in seconds for each HTTP request. Passed onto LWP::UserAgent
+
+Default: 30
+
+=head2 json
+
+=head1 METHODS
+
+=head2 new
+
+The Store::CouchDB class takes a any of the attributes described above as parameters.
+
+=head2 get_doc
+
+The get_doc call returns a document by its ID. If no document ID is given it
+returns undef
+
+    $sc->get_doc({ id => 'DOCUMENT_ID', dbname => 'DATABASE' });
+
+where the dbname key is optional. Alternatively this works too:
+
+    $sc->get_doc('DOCUMENT_ID');
+
+=head2 head_doc
+
+If all you need is the revision a HEAD call is enough.
+
+=head2 get_design_docs
+
+The get_design_docs call returns all design document names in an array
+reference.
+
+    $sc->get_design_docs({ dbname => 'DATABASE' });
+
+Again the "dbname" key is optional.
+
+=head2 put_doc
+
+The put_doc call writes a document to the database and either updates a
+existing document if the _id field is present or writes a new one.
+Updates can also be done with the update_doc call but that is really
+just a wrapper for put_doc.
+
+    $sc->put_doc({ doc => {DOCUMENT}, dbname => 'DATABASE' });
+
+=head2 del_doc
+
+The del_doc call marks a document as deleted. CouchDB needs a revision
+to delete a document which is good for security but is not practical for
+me in some situations. If no revision is supplied del_doc will get the
+document, find the latest revision and delete the document. Returns the
+REVISION in SCALAR context, DOCUMENT_ID and REVISION in array context.
+
+    $sc->del_doc({ id => 'DOCUMENT_ID', rev => 'REVISION', dbname => 'DATABASE' });
+
+=head2 update_doc
+
+The update_doc function is really just a wrapper for the put_doc call
+and mainly there for compatibility. the naming is different and it is
+discouraged to use it and it may disappear in a later version.
+
+    $sc->update_doc({ doc => DOCUMENT, name => 'DOCUMENT_ID', dbname => 'DATABASE' });
+
+=head2 copy_doc
+
+The copy_doc is _not_ the same as the CouchDB equivalent. In CouchDB the
+copy command wants to have a name/id for the new document which is
+mandatory and can not be ommitted. I find that inconvenient and made
+this small wrapper. All it does is getting the doc to copy, removes the
+_id and _rev fields and saves it back as a new document.
+
+    $sc->copy_doc({ id => 'DOCUMENT_ID', dbname => 'DATABASE' });
+
+=head2 get_view
+
+There are several ways to represent the result of a view and various
+ways to query for a view. All the views support parameters but there are
+different functions for GET/POST view handling and representing the
+reults.
+The get_view uses GET to call the view and returns a hash with the _id
+as the key and the document as a value in the hash structure. This is
+handy for getting a hash structure for several documents in the DB.
+
+    $sc->get_view({
+        view => 'design_doc/view',
+        opts => { key => $key },
+    });
+
+=head2 get_post_view
+
+The get_post_view uses POST to call the view and returns a hash with the _id
+as the key and the document as a value in the hash structure. This is
+handy for getting a hash structure for several documents in the DB.
+
+    $sc->get_post_view({
+        view => 'DESIGN_DOC/VIEW',
+        opts => [ $key1, $key2, $key3, ... ],
+    });
+
+=head2 get_view_array
+
+Same as get_array_view only returns a real array ref. Use either one
+depending on your use case and convenience.
+
+=head2 get_array_view
+
+The get_array_view uses GET to call the view and returns an array
+reference of matched documents. This view functions is the one I use
+most and has the best support for corner cases.
+
+    $sc->get_array_view({
+        view => 'DESIGN_DOC/VIEW',
+        opts => { key => $key },
+    });
+
+A normal response hash would be the "value" part of the document with
+the _id moved in as "id". If the response is not a HASH (the request was
+resulting in key/value pairs) the entire doc is returned resulting in a
+hash of key/value/id per document.
+
+=head2 purge
+
+This function tries to find deleted documents via the _changes call and
+then purges as many deleted documents as defined in $self->purge_limit
+which currently defaults to 5000. This call is somewhat experimental in
+the moment.
+
+    $sc->purge({ dbname => 'DATABASE' });
+
+=head2 compact
+
+This compacts the DB file and optionally calls purge and cleans up the
+view index as well.
+
+    $sc->compact({ purge => 1, view_compact => 1 })
+
+=head2 put_file
+
+To add an attachement to CouchDB use the put_file method. 'file' because
+it is shorter than attachement and less prone to misspellings. The
+put_file method works like the put_doc function and will add an
+attachement to an existing doc if the '_id' parameter is given or addes
+a new doc with the attachement if no '_id' parameter is given.
+The only mandatory parameter is the 'file' parameter.
+
+=head2 get_file
+
+Get a file attachement from a CouchDB document.
+
+=head2 config
+
+This can be called with a hash of config values to configure the databse
+object. I use it frequently with sections of config files.
+
+    $sc->config({ host => 'HOST', port => 'PORT', db => 'DATABASE' });
+
+=head2 create_db
+
+Create a Database
+
+    $sc->create_db('name');
+
+=head1 BUGS
+
+Please report any bugs or feature requests on GitHub's issue tracker L<https://github.com/norbu09/Store-CouchDB/issues>.
+Pull requests welcome.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Store::CouchDB
+
+You can also look for information at:
+
+=over 4
+
+=item * GitHub repository
+
+L<https://github.com/norbu09/Store-CouchDB>
+
+=item * MetaCPAN
+
+L<https://metacpan.org/module/Store::CouchDB>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Store::CouchDB>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Store::CouchDB>
+
+=back
+
+=head1 ACKNOWLEDGEMENTS
+
+Thanks for DB::CouchDB which was very enspiring for writing this library
+
+=head1 AUTHOR
+
+Lenz Gschwendtner <norbu09@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by Lenz Gschwendtner.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
