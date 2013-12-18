@@ -698,11 +698,14 @@ sub purge {
     my $resp;
 
     foreach my $_del (@{ $res->{results} }) {
-        next unless (exists $_del->{deleted} and $_del->{deleted});
+        next
+            unless (exists $_del->{deleted}
+            and ($_del->{deleted} eq 'true' or $_del->{deleted} == 1));
+
         my $opts = {
+            $_del->{id} => [ $_del->{changes}->[0]->{rev} ],
 
             #purge_seq => $_del->{seq},
-            $_del->{id} => [ $_del->{changes}->[0]->{rev} ],
         };
         $resp->{ $_del->{seq} } = $self->_call($self->db . '/_purge', $opts);
     }
