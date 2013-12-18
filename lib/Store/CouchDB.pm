@@ -1,19 +1,15 @@
 package Store::CouchDB;
 
 use Any::Moose;
+
+# ABSTRACT: Store::CouchDB - a simple CouchDB driver
+
+# VERSION
+
 use JSON;
 use LWP::UserAgent;
 use URI::Escape;
-
-=head1 NAME
-
-Store::CouchDB - a simple CouchDB driver
-
-=head1 VERSION
-
-Version 2.8.7.7
-
-=cut
+use Carp;
 
 =head1 SYNOPSIS
 
@@ -30,18 +26,25 @@ stuff that somehow enters the system and then breaks CouchDB. I use the
 brilliant Encoding::FixLatin module to fix this on the fly.
 
     use Store::CouchDB;
-
-    my $db = Store::CouchDB->new();
-    $db->config({host => 'localhost', db => 'your_db'});
-    my $couch = {
+    
+    my $sc = Store::CouchDB->new(host => 'localhost', db => 'your_db');
+    # OR
+    my $sc = Store::CouchDB->new();
+    $sc->config({host => 'localhost', db => 'your_db'});
+    my $array_ref = $db->get_array_view({
         view   => 'design_doc/view',
-        opts   => { key => '"' . $key . '"' },
-    };
-    my $status = $db->get_array_view($couch);
+        opts   => { key => $key },
+    });
+
+=head1 ATTRIBUTES
+
+=head2 debug
+
+Sets the class in debug mode
+
+Default: false
 
 =cut
-
-our $VERSION = '2.8';
 
 has 'debug' => (
     is      => 'rw',
@@ -50,17 +53,39 @@ has 'debug' => (
     lazy    => 1,
 );
 
+=head2 host
+
+Default: localhost
+
+=cut
+
 has 'host' => (
     is       => 'rw',
     isa      => 'Str',
     required => 1,
-    default  => sub { 'localhost' });
+    default  => sub { 'localhost' },
+);
+
+=head2 port
+
+Default: 5984
+
+=cut
 
 has 'port' => (
     is       => 'rw',
     isa      => 'Int',
     required => 1,
-    default  => sub { 5984 });
+    default  => sub { 5984 },
+);
+
+=head2 ssl
+
+Connect to host using SSL/TLS.
+
+Default: false
+
+=cut
 
 has 'ssl' => (
     is      => 'rw',
@@ -68,6 +93,12 @@ has 'ssl' => (
     default => sub { 0 },
     lazy    => 1,
 );
+
+=head2 db
+
+The databae name to use. This has to be set for all oprations!
+
+=cut
 
 has 'db' => (
     is        => 'rw',
@@ -78,20 +109,52 @@ has 'db' => (
     predicate => 'has_db',
 );
 
+=head2 user
+
+The DB user to authenticate as. optional
+
+=cut
+
 has 'user' => (
     is  => 'rw',
     isa => 'Str',
 );
+
+=head2 pass
+
+The password for the user to authenticate with. required if user is given.
+
+=cut
 
 has 'pass' => (
     is  => 'rw',
     isa => 'Str',
 );
 
+=head2 method
+
+This is internal and sets the request method to be used (GET|POST)
+
+Default: GET
+
+=cut
+
 has 'method' => (
     is       => 'rw',
     required => 1,
-    default  => sub { 'GET' });
+    default  => sub { 'GET' },
+);
+
+=head2 error
+
+This is set if an error has occured and can be called to get the last
+error with the 'has_error' predicate.
+
+    $sc->has_error
+
+Error string if there was an error
+
+=cut
 
 has 'error' => (
     is        => 'rw',
@@ -99,15 +162,36 @@ has 'error' => (
     clearer   => 'clear_error',
 );
 
+=head2 purge_limit
+
+How many documents shall we try to purge.
+
+Default: 5000
+
+=cut
+
 has 'purge_limit' => (
     is      => 'rw',
-    default => sub { 5000 });
+    default => sub { 5000 },
+);
+
+=head2 timeout
+
+Timeout in seconds for each HTTP request. Passed onto LWP::UserAgent
+
+Default: 30
+
+=cut
 
 has 'timeout' => (
     is      => 'rw',
     isa     => 'Int',
     default => sub { 30 },
 );
+
+=head2 json
+
+=cut
 
 has 'json' => (
     is      => 'rw',
@@ -117,85 +201,45 @@ has 'json' => (
     },
 );
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =head2 new
 
-The Store::CouchDB class takes a number of parameters:
-
-=head3 debug
-
-Sets the class in debug mode
-
-=head3 host
-
-The host to use. Defaults to 'localhost'
-
-=head3 port
-
-The port to use. Defaults to '5984'
-
-=head4 ssl
-
-Connect to host via SSL/TLS. Defaults to '0'
-
-=head3 db
-
-The DB to use. This has to be set for all oprations!
-
-=head3 user
-
-The DB user to authenticate as. optional
-
-=head3 pass
-
-The password for the user to authenticate with. required if user is given.
-
-=head3 method
-
-This is internal and sets the request method to be used (GET|POST)
-
-=head3 error
-
-This is set if an error has occured and can be called to get the last
-error with the 'has_error' predicate.
-
-    $db->has_error
-
-=head3 purge_limit
-
-How many documents shall we try to purge. Defaults to 5000
+The Store::CouchDB class takes a any of the attributes described above as parameters.
 
 =head2 get_doc
 
-The get_doc call returns a document by its ID. If no document ID is
-given returns undef
+The get_doc call returns a document by its ID. If no document ID is given it
+returns undef
 
-    get_doc({id => DOCUMENT_ID, [dbname => DATABASE]})
+    $sc->get_doc({ id => 'DOCUMENT_ID', dbname => 'DATABASE' });
 
-alternatively this works too
+where the dbname key is optional. Alternatively this works too:
 
-    get_doc('DOCUMENT_ID')
+    $sc->get_doc('DOCUMENT_ID');
 
 =cut
 
 sub get_doc {
     my ($self, $data) = @_;
 
-    unless(ref $data eq 'HASH'){
+    unless (ref $data eq 'HASH') {
         $data = { id => $data };
     }
+
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
-    unless($data->{id}){
-        warn "Document ID not defined";
+
+    unless ($data->{id}) {
+        carp 'Document ID not defined';
         return;
     }
 
-
     my $path = $self->db . '/' . $data->{id};
+
     return $self->_call($path);
 }
 
@@ -211,13 +255,19 @@ sub head_doc {
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
-    $self->_check_db;
-    confess "Document ID not defined" unless $data->{id};
-    $self->method('HEAD');
 
+    $self->_check_db;
+
+    unless ($data->{id}) {
+        carp 'Document ID not defined';
+        return;
+    }
+
+    $self->method('HEAD');
     my $path = $self->db . '/' . $data->{id};
     my $rev  = $self->_call($path);
     $rev =~ s/"//g;
+
     return $rev;
 }
 
@@ -226,7 +276,9 @@ sub head_doc {
 The get_design_docs call returns all design document names in an array
 reference.
 
-    get_design_docs({[dbname => DATABASE]})
+    $sc->get_design_docs({ dbname => 'DATABASE' });
+
+Again the "dbname" key is optional.
 
 =cut
 
@@ -236,18 +288,22 @@ sub get_design_docs {
     if ($data && $data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
     $self->method('GET');
     my $res = $self->_call($path);
+
     return unless $res->{rows}->[0];
+
     my @design;
     foreach my $_design (@{ $res->{rows} }) {
         my ($_d, $name) = split(/\//, $_design->{key}, 2);
         push(@design, $name);
     }
+
     return \@design;
 }
 
@@ -258,22 +314,27 @@ existing document if the _id field is present or writes a new one.
 Updates can also be done with the update_doc call but that is really
 just a wrapper for put_doc.
 
-    put_doc({doc => DOCUMENT, [dbname => DATABASE]})
+    $sc->put_doc({ doc => {DOCUMENT}, dbname => 'DATABASE' });
 
 =cut
 
 sub put_doc {
     my ($self, $data) = @_;
 
-    confess "Document not defined" unless $data->{doc};
+    unless ($data->{doc} and ref $data->{doc} eq 'HASH') {
+        carp "Document not defined";
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $path;
-    my $method = $self->method();
+    my $method = $self->method;
+
     if ($data->{doc}->{_id}) {
         $self->method('PUT');
         $path = $self->db . '/' . $data->{doc}->{_id};
@@ -296,9 +357,10 @@ sub put_doc {
 The del_doc call marks a document as deleted. CouchDB needs a revision
 to delete a document which is good for security but is not practical for
 me in some situations. If no revision is supplied del_doc will get the
-document, find the latest revision and delete the document.
+document, find the latest revision and delete the document. Returns the
+REVISION in SCALAR context, DOCUMENT_ID and REVISION in array context.
 
-    del_doc({id => DOCUMENT_ID, [rev => REVISION, dbname => DATABASE]})
+    $sc->del_doc({ id => 'DOCUMENT_ID', rev => 'REVISION', dbname => 'DATABASE' });
 
 =cut
 
@@ -308,11 +370,15 @@ sub del_doc {
     my $id  = $data->{id}  || $data->{_id};
     my $rev = $data->{rev} || $data->{_rev};
 
-    confess "Document ID not defined" unless $id;
+    unless ($id) {
+        carp 'Document ID not defined';
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     if (!$rev) {
@@ -333,16 +399,19 @@ sub del_doc {
 
 The update_doc function is really just a wrapper for the put_doc call
 and mainly there for compatibility. the naming is different and it is
-discouraged to use and may disappear in a later version.
+discouraged to use it and it may disappear in a later version.
 
-    update_doc({doc => DOCUMENT, [name => DOCUMENT_ID, dbname => DATABASE]})
+    $sc->update_doc({ doc => DOCUMENT, name => 'DOCUMENT_ID', dbname => 'DATABASE' });
 
 =cut
 
 sub update_doc {
     my ($self, $data) = @_;
 
-    confess "Document not defined" unless $data->{doc};
+    unless ($data->{doc}) {
+        carp "Document not defined";
+        return;
+    }
 
     if ($data->{name}) {
         $data->{doc}->{_id} = $data->{name};
@@ -363,14 +432,17 @@ mandatory and can not be ommitted. I find that inconvenient and made
 this small wrapper. All it does is getting the doc to copy, removes the
 _id and _rev fields and saves it back as a new document.
 
-    copy_doc({id => DOCUMENT_ID, [dbname => DATABASE]})
+    $sc->copy_doc({ id => 'DOCUMENT_ID', dbname => 'DATABASE' });
 
 =cut
 
 sub copy_doc {
     my ($self, $data) = @_;
 
-    confess "Document ID not defined" unless $data->{id};
+    unless ($data->{id}) {
+        carp "Document ID not defined";
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
@@ -381,6 +453,7 @@ sub copy_doc {
     my $doc = $self->get_doc($data);
     delete $doc->{_id};
     delete $doc->{_rev};
+
     return $self->put_doc({ doc => $doc });
 }
 
@@ -394,23 +467,25 @@ The get_view uses GET to call the view and returns a hash with the _id
 as the key and the document as a value in the hash structure. This is
 handy for getting a hash structure for several documents in the DB.
 
-   get_view(
-       {
-           view => 'DESIGN_DOC/VIEW',
-           opts => { key => "\"" . KEY . "\"" }
-       }
-   );
+    $sc->get_view({
+        view => 'design_doc/view',
+        opts => { key => $key },
+    });
 
 =cut
 
 sub get_view {
     my ($self, $data) = @_;
 
-    confess "View not defined" unless $data->{view};
+    unless ($data->{view}) {
+        carp "View not defined";
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $path = $self->_make_view_path($data);
@@ -437,6 +512,7 @@ sub get_view {
         }
         $c++;
     }
+
     return $result;
 }
 
@@ -446,24 +522,29 @@ The get_post_view uses POST to call the view and returns a hash with the _id
 as the key and the document as a value in the hash structure. This is
 handy for getting a hash structure for several documents in the DB.
 
-   get_post_view(
-       {
-           view => 'DESIGN_DOC/VIEW',
-           opts => [ KEY1, KEY2, KEY3, ... ]
-       }
-   );
+    $sc->get_post_view({
+        view => 'DESIGN_DOC/VIEW',
+        opts => [ $key1, $key2, $key3, ... ],
+    });
 
 =cut
 
 sub get_post_view {
     my ($self, $data) = @_;
 
-    confess "View not defined"                            unless $data->{view};
-    confess "No options defined - use 'get_view' instead" unless $data->{opts};
+    unless ($data->{view}) {
+        carp 'View not defined';
+        return;
+    }
+    unless ($data->{opts}) {
+        carp 'No options defined - use "get_view" instead';
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $opts;
@@ -489,7 +570,7 @@ sub get_post_view {
 
 =head2 get_view_array
 
-Same as get_array_view only returns a real array. Use either one
+Same as get_array_view only returns a real array ref. Use either one
 depending on your use case and convenience.
 
 =cut
@@ -497,15 +578,20 @@ depending on your use case and convenience.
 sub get_view_array {
     my ($self, $data) = @_;
 
-    confess "View not defined" unless $data->{view};
+    unless ($data->{view}) {
+        carp 'View not defined';
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $path = $self->_make_view_path($data);
     my $res  = $self->_call($path);
+
     my @result;
     foreach my $doc (@{ $res->{rows} }) {
         if ($doc->{doc}) {
@@ -522,6 +608,7 @@ sub get_view_array {
             }
         }
     }
+
     return \@result;
 }
 
@@ -531,12 +618,10 @@ The get_array_view uses GET to call the view and returns an array
 reference of matched documents. This view functions is the one I use
 most and has the best support for corner cases.
 
-   get_array_view(
-       {
-           view => 'DESIGN_DOC/VIEW',
-           opts => { key => "\"" . KEY . "\"" }
-       }
-   );
+    $sc->get_array_view({
+        view => 'DESIGN_DOC/VIEW',
+        opts => { key => $key },
+    });
 
 A normal response hash would be the "value" part of the document with
 the _id moved in as "id". If the response is not a HASH (the request was
@@ -548,11 +633,15 @@ hash of key/value/id per document.
 sub get_array_view {
     my ($self, $data) = @_;
 
-    confess "View not defined" unless $data->{view};
+    unless ($data->{view}) {
+        carp "View not defined";
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $path = $self->_make_view_path($data);
@@ -574,6 +663,7 @@ sub get_array_view {
             }
         }
     }
+
     return $result;
 }
 
@@ -584,7 +674,7 @@ then purges as many deleted documents as defined in $self->purge_limit
 which currently defaults to 5000. This call is somewhat experimental in
 the moment.
 
-    purge({[dbname => DATABASE]})
+    $sc->purge({ dbname => 'DATABASE' });
 
 =cut
 
@@ -594,12 +684,15 @@ sub purge {
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $path = $self->db . '/_changes?limit=' . $self->purge_limit . '&since=0';
     $self->method('GET');
     my $res = $self->_call($path);
+
     return unless $res->{results}->[0];
+
     my @del;
     $self->method('POST');
     my $resp;
@@ -613,6 +706,7 @@ sub purge {
         };
         $resp->{ $_del->{seq} } = $self->_call($self->db . '/_purge', $opts);
     }
+
     return $resp;
 }
 
@@ -621,7 +715,7 @@ sub purge {
 This compacts the DB file and optionally calls purge and cleans up the
 view index as well.
 
-    compact({[purge=>1, view_compact=>1]})
+    $sc->compact({ purge => 1, view_compact => 1 })
 
 =cut
 
@@ -631,12 +725,14 @@ sub compact {
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $res;
     if ($data->{purge}) {
         $res->{purge} = $self->purge();
     }
+
     if ($data->{view_compact}) {
         $self->method('POST');
         $res->{view_compact} = $self->_call($self->db . '/_view_cleanup');
@@ -647,6 +743,7 @@ sub compact {
                 $self->_call($self->db . '/_compact/' . $doc);
         }
     }
+
     $self->method('POST');
     $res->{compact} = $self->_call($self->db . '/_compact');
 
@@ -667,12 +764,19 @@ The only mandatory parameter is the 'file' parameter.
 sub put_file {
     my ($self, $data) = @_;
 
-    confess "File content not defined" unless $data->{file};
-    confess "File name not defined"    unless $data->{filename};
+    unless ($data->{file}) {
+        carp 'File content not defined';
+        return;
+    }
+    unless ($data->{filename}) {
+        carp 'File name not defined';
+        return;
+    }
 
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
 
     my $id  = $data->{id}  || $data->{doc}->{_id};
@@ -683,8 +787,9 @@ sub put_file {
         $rev = $self->head_doc({ id => $id });
         print STDERR ">>$rev<<\n";
     }
-    ($id, $rev) = $self->put_doc({ doc => {} })
-        unless $id;    # create a new doc
+
+    # create a new doc if required
+    ($id, $rev) = $self->put_doc({ doc => {} }) unless $id;
 
     my $path = $self->db . '/' . $id . '/' . $data->{filename} . '?rev=' . $rev;
 
@@ -708,11 +813,20 @@ sub get_file {
     if ($data->{dbname}) {
         $self->db($data->{dbname});
     }
+
     $self->_check_db;
-    confess "Document ID not defined" unless $data->{id};
-    confess "File name not defined"   unless $data->{filename};
+
+    unless ($data->{id}) {
+        carp "Document ID not defined";
+        return;
+    }
+    unless ($data->{filename}) {
+        carp "File name not defined";
+        return;
+    }
 
     my $path = join('/', $self->db, $data->{id}, $data->{filename});
+
     return $self->_call($path);
 }
 
@@ -721,32 +835,9 @@ sub get_file {
 This can be called with a hash of config values to configure the databse
 object. I use it frequently with sections of config files.
 
-    config({[host => HOST, port => PORT, db => DATABASE]})
+    $sc->config({ host => 'HOST', port => 'PORT', db => 'DATABASE' });
 
 =cut
-
-
-=head2 create_db
-
-Create a Couch
-
-    create_db('name')
-
-=cut
-
-sub create_db {
-    my ($self, $db) = @_;
-
-    if($db){
-        $self->db($db);
-    }
-
-    my $method = $self->method();
-    $self->method('PUT');
-    my $res = $self->_call($self->db);
-    $self->method($method);
-    return $res;
-}
 
 sub config {
     my ($self, $data) = @_;
@@ -757,11 +848,38 @@ sub config {
     return $self;
 }
 
+=head2 create_db
+
+Create a Database
+
+    $sc->create_db('name');
+
+=cut
+
+sub create_db {
+    my ($self, $db) = @_;
+
+    if ($db) {
+        $self->db($db);
+    }
+
+    my $method = $self->method();
+    $self->method('PUT');
+    my $res = $self->_call($self->db);
+    $self->method($method);
+
+    return $res;
+}
+
 sub _check_db {
     my ($self) = @_;
 
-    confess "database missing! you must set \$self->db() before running queries"
-        unless $self->has_db;
+    unless ($self->has_db) {
+        carp 'database missing! you must set $sc->db() before running queries';
+        return;
+    }
+
+    return;
 }
 
 sub _make_view_path {
@@ -817,12 +935,14 @@ sub _call {
 
     $ua->default_header('Content-Type' => $ct || "application/json");
     my $res = $ua->request($req);
+
     if ($self->debug) {
-        require Data::Dumper;
+        require Data::Dump;
         print STDERR __PACKAGE__
             . ": Result: "
-            . Data::Dumper::Dumper($res->decoded_content);
+            . Data::Dump::dump($res->decoded_content);
     }
+
     if ($self->method eq 'HEAD') {
         if ($self->debug) {
             print STDERR __PACKAGE__
@@ -843,6 +963,7 @@ sub _call {
     else {
         $self->error($res->status_line);
     }
+
     return;
 }
 
@@ -856,19 +977,11 @@ sub _hash {
     }
 }
 
-=head1 EXPORT
-
-Nothing is exported at this stage.
-
-=head1 AUTHOR
-
-Lenz Gschwendtner, C<< <norbu09 at cpan.org> >>
-
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-store-couchdb at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Store-CouchDB>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+Please report any bugs or feature requests on GitHub's issue tracker L<https://github.com/norbu09/Store-CouchDB/issues>.
+Pull requests welcome.
+
 
 =head1 SUPPORT
 
@@ -881,21 +994,21 @@ You can also look for information at:
 
 =over 4
 
-=item * RT: CPAN's request tracker
+=item * GitHub repository
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Store-CouchDB>
+L<https://github.com/norbu09/Store-CouchDB>
+
+=item * MetaCPAN
+
+L<https://metacpan.org/module/Store::CouchDB>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Store-CouchDB>
+L<http://annocpan.org/dist/Store::CouchDB>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Store-CouchDB>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Store-CouchDB/>
+L<http://cpanratings.perl.org/d/Store::CouchDB>
 
 =back
 
@@ -903,16 +1016,6 @@ L<http://search.cpan.org/dist/Store-CouchDB/>
 =head1 ACKNOWLEDGEMENTS
 
 Thanks for DB::CouchDB which was very enspiring for writing this library
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2010 Lenz Gschwendtner.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the Apache License or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
-
 
 =cut
 
