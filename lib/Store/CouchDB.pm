@@ -914,7 +914,7 @@ sub _make_view_path {
 sub _call {
     my ($self, $path, $content, $ct) = @_;
 
-    binmode(STDERR, ":utf8");
+    binmode(STDERR, ":encoding(UTF-8)");
 
     # cleanup old error
     $self->clear_error if $self->has_error;
