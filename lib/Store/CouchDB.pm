@@ -96,16 +96,13 @@ has 'ssl' => (
 
 =head2 db
 
-The databae name to use. This has to be set for all oprations!
+The databae name to use.
 
 =cut
 
 has 'db' => (
     is        => 'rw',
     isa       => 'Str',
-    required  => 1,
-    lazy      => 1,
-    default   => sub { },
     predicate => 'has_db',
 );
 
@@ -293,14 +290,17 @@ sub get_design_docs {
 
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
+    $path .= '&include_docs=true' if ($data && $data->{include_docs});
+
     $self->method('GET');
     my $res = $self->_call($path);
 
     return unless $res->{rows}->[0];
+    return $res->{rows} if ($data && $data->{include_docs});
 
     my @design;
-    foreach my $_design (@{ $res->{rows} }) {
-        my ($_d, $name) = split(/\//, $_design->{key}, 2);
+    foreach my $design (@{ $res->{rows} }) {
+        my (undef, $name) = split(/\//, $design->{key}, 2);
         push(@design, $name);
     }
 
@@ -872,6 +872,22 @@ sub create_db {
     $self->method($method);
 
     return $res;
+}
+
+=head2 all_dbs
+
+Get a list of all Databases
+
+    my @db = $sc->all_dbs;
+
+=cut
+
+sub all_dbs {
+    my ($self) = @_;
+
+    my $res = $self->_call('_all_dbs');
+
+    return @{ $res || [] };
 }
 
 sub _check_db {

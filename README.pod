@@ -6,7 +6,7 @@ Store::CouchDB - Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-version 2.9
+version 3.0
 
 =head1 SYNOPSIS
 
@@ -57,7 +57,7 @@ Default: false
 
 =head2 db
 
-The databae name to use. This has to be set for all oprations!
+The databae name to use.
 
 =head2 user
 
@@ -251,6 +251,12 @@ object. I use it frequently with sections of config files.
 Create a Database
 
     $sc->create_db('name');
+
+=head2 all_dbs
+
+Get a list of all Databases
+
+    my @db = $sc->all_dbs;
 
 =head1 BUGS
 
