@@ -237,6 +237,8 @@ sub get_doc {
 
     my $path = $self->db . '/' . $data->{id};
 
+    $self->method('GET');
+
     return $self->_call($path);
 }
 
@@ -260,9 +262,11 @@ sub head_doc {
         return;
     }
 
-    $self->method('HEAD');
     my $path = $self->db . '/' . $data->{id};
-    my $rev  = $self->_call($path);
+
+    $self->method('HEAD');
+    my $rev = $self->_call($path);
+
     $rev =~ s/"//g;
 
     return $rev;
@@ -333,8 +337,6 @@ sub put_doc {
     $self->_check_db;
 
     my $path;
-    my $method = $self->method;
-
     if ($data->{doc}->{_id}) {
         $self->method('PUT');
         $path = $self->db . '/' . $data->{doc}->{_id};
@@ -346,10 +348,8 @@ sub put_doc {
     }
 
     my $res = $self->_call($path, $data->{doc});
-    $self->method($method);
 
-    return ($res->{id} || undef, $res->{rev} || undef) if wantarray;
-    return $res->{id} || undef;
+    return ($res->{id} || undef, $res->{rev} || undef);
 }
 
 =head2 del_doc
@@ -386,10 +386,10 @@ sub del_doc {
     }
 
     my $path;
-    $self->method('DELETE');
     $path = $self->db . '/' . $id . '?rev=' . $rev;
+
+    $self->method('DELETE');
     my $res = $self->_call($path);
-    $self->method('GET');
 
     return ($res->{id} || undef, $res->{rev} || undef) if wantarray;
     return $res->{rev} || undef;
@@ -768,19 +768,15 @@ sub purge {
     return unless $res->{results}->[0];
 
     my @del;
-    $self->method('POST');
     my $resp;
 
+    $self->method('POST');
     foreach my $_del (@{ $res->{results} }) {
         next
             unless (exists $_del->{deleted}
             and ($_del->{deleted} eq 'true' or $_del->{deleted} == 1));
 
-        my $opts = {
-            $_del->{id} => [ $_del->{changes}->[0]->{rev} ],
-
-            #purge_seq => $_del->{seq},
-        };
+        my $opts = { $_del->{id} => [ $_del->{changes}->[0]->{rev} ], };
         $resp->{ $_del->{seq} } = $self->_call($self->db . '/_purge', $opts);
     }
 
@@ -858,11 +854,10 @@ sub put_file {
 
     my $id  = $data->{id}  || $data->{doc}->{_id};
     my $rev = $data->{rev} || $data->{doc}->{_rev};
-    my $method = $self->method();
 
     if (!$rev && $id) {
         $rev = $self->head_doc({ id => $id });
-        print STDERR ">>$rev<<\n";
+        print STDERR __PACKAGE__ . ": put_file(): rev $rev\n" if $self->debug;
     }
 
     # create a new doc if required
@@ -872,10 +867,8 @@ sub put_file {
 
     $self->method('PUT');
     my $res = $self->_call($path, $data->{file}, $data->{content_type});
-    $self->method($method);
 
-    return ($res->{id} || undef, $res->{rev} || undef) if wantarray;
-    return $res->{id} || undef;
+    return ($res->{id} || undef, $res->{rev} || undef);
 }
 
 =head2 get_file
@@ -903,6 +896,8 @@ sub get_file {
     }
 
     my $path = join('/', $self->db, $data->{id}, $data->{filename});
+
+    $self->method('GET');
 
     return $self->_call($path);
 }
@@ -978,6 +973,7 @@ Get a list of all Databases
 sub all_dbs {
     my ($self) = @_;
 
+    $self->method('GET');
     my $res = $self->_call('_all_dbs');
 
     return @{ $res || [] };
@@ -1052,7 +1048,9 @@ sub _call {
     $uri .= $self->user . ':' . $self->pass . '@'
         if ($self->user and $self->pass);
     $uri .= $self->host . ':' . $self->port . '/' . $path;
-    print STDERR __PACKAGE__ . ": URI: $uri\n" if $self->debug;
+
+    print STDERR __PACKAGE__ . ': ' . $self->method . ": $uri\n"
+        if $self->debug;
 
     my $req = HTTP::Request->new();
     $req->method($self->method);
@@ -1091,7 +1089,7 @@ sub _call {
         return $result unless $@;
         return {
             file         => $res->decoded_content,
-            content_type => $res->content_type
+            content_type => [ $res->content_type ]->[0],
         };
     }
     else {
