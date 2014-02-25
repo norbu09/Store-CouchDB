@@ -32,7 +32,7 @@ brilliant Encoding::FixLatin module to fix this on the fly.
     my $sc = Store::CouchDB->new();
     $sc->config({host => 'localhost', db => 'your_db'});
     my $array_ref = $db->get_array_view({
-        view   => 'design_doc/view',
+        view   => 'design_doc/view_name',
         opts   => { key => $key },
     });
 
@@ -209,11 +209,11 @@ The Store::CouchDB class takes a any of the attributes described above as parame
 The get_doc call returns a document by its ID. If no document ID is given it
 returns undef
 
-    $sc->get_doc({ id => 'DOCUMENT_ID', dbname => 'DATABASE' });
+    my $doc = $sc->get_doc({ id => 'doc_id', dbname => 'database' });
 
 where the dbname key is optional. Alternatively this works too:
 
-    $sc->get_doc('DOCUMENT_ID');
+    my $doc = $sc->get_doc('doc_id');
 
 =cut
 
@@ -246,6 +246,8 @@ sub get_doc {
 
 If all you need is the revision a HEAD call is enough.
 
+    my $rev = $sc->head_doc({ id => 'doc_id' });
+
 =cut
 
 sub head_doc {
@@ -275,9 +277,10 @@ sub head_doc {
 =head2 get_design_docs
 
 The get_design_docs call returns all design document names in an array
-reference.
+reference. You can add include_docs => 1 under the "opts" key to get the whole
+design document.
 
-    $sc->get_design_docs({ dbname => 'DATABASE' });
+    my @docs = @{ $sc->get_design_docs({ dbname => 'database' }) };
 
 Again the "dbname" key is optional.
 
@@ -318,7 +321,7 @@ existing document if the _id field is present or writes a new one.
 Updates can also be done with the update_doc call but that is really
 just a wrapper for put_doc.
 
-    $sc->put_doc({ doc => {DOCUMENT}, dbname => 'DATABASE' });
+    my ($id, $rev) = $sc->put_doc({ doc => { .. }, dbname => 'database' });
 
 =cut
 
@@ -358,9 +361,9 @@ The del_doc call marks a document as deleted. CouchDB needs a revision
 to delete a document which is good for security but is not practical for
 me in some situations. If no revision is supplied del_doc will get the
 document, find the latest revision and delete the document. Returns the
-REVISION in SCALAR context, DOCUMENT_ID and REVISION in array context.
+revision in SCALAR context, document ID and revision in ARRAY context.
 
-    $sc->del_doc({ id => 'DOCUMENT_ID', rev => 'REVISION', dbname => 'DATABASE' });
+    my $rev = $sc->del_doc({ id => 'doc_id', rev => 'r-evision', dbname => 'database' });
 
 =cut
 
@@ -401,7 +404,7 @@ The update_doc function is really just a wrapper for the put_doc call
 and mainly there for compatibility. the naming is different and it is
 discouraged to use it and it may disappear in a later version.
 
-    $sc->update_doc({ doc => DOCUMENT, name => 'DOCUMENT_ID', dbname => 'DATABASE' });
+    my $id = $sc->update_doc({ doc => { .. }, name => 'doc_id', dbname => 'database' });
 
 =cut
 
@@ -432,7 +435,7 @@ mandatory and can not be ommitted. I find that inconvenient and made
 this small wrapper. All it does is getting the doc to copy, removes the
 _id and _rev fields and saves it back as a new document.
 
-    $sc->copy_doc({ id => 'DOCUMENT_ID', dbname => 'DATABASE' });
+    my ($id, $rev) = $sc->copy_doc({ id => 'doc_id', dbname => 'database' });
 
 =cut
 
@@ -497,8 +500,8 @@ The get_view uses GET to call the view and returns a hash with the _id
 as the key and the document as a value in the hash structure. This is
 handy for getting a hash structure for several documents in the DB.
 
-    $sc->get_view({
-        view => 'design_doc/view',
+    my $hashref = $sc->get_view({
+        view => 'design_doc/view_name',
         opts => { key => $key },
     });
 
@@ -553,8 +556,8 @@ The get_post_view uses POST to call the view and returns a hash with the _id
 as the key and the document as a value in the hash structure. This is
 handy for getting a hash structure for several documents in the DB.
 
-    $sc->get_post_view({
-        view => 'DESIGN_DOC/VIEW',
+    my $hashref = $sc->get_post_view({
+        view => 'design_doc/view_name',
         opts => [ $key1, $key2, $key3, ... ],
     });
 
@@ -648,10 +651,10 @@ The get_array_view uses GET to call the view and returns an array
 reference of matched documents. This view functions is the one I use
 most and has the best support for corner cases.
 
-    $sc->get_array_view({
-        view => 'DESIGN_DOC/VIEW',
+    my @docs = @{ $sc->get_array_view({
+        view => 'design_doc/view_name',
         opts => { key => $key },
-    });
+    }) };
 
 A normal response hash would be the "value" part of the document with
 the _id moved in as "id". If the response is not a HASH (the request was
@@ -748,7 +751,7 @@ then purges as many deleted documents as defined in $self->purge_limit
 which currently defaults to 5000. This call is somewhat experimental in
 the moment.
 
-    $sc->purge({ dbname => 'DATABASE' });
+    my $result = $sc->purge({ dbname => 'database' });
 
 =cut
 
@@ -788,7 +791,7 @@ sub purge {
 This compacts the DB file and optionally calls purge and cleans up the
 view index as well.
 
-    $sc->compact({ purge => 1, view_compact => 1 })
+    my $result = $sc->compact({ purge => 1, view_compact => 1 });
 
 =cut
 
@@ -828,9 +831,11 @@ sub compact {
 To add an attachement to CouchDB use the put_file method. 'file' because
 it is shorter than attachement and less prone to misspellings. The
 put_file method works like the put_doc function and will add an
-attachement to an existing doc if the '_id' parameter is given or addes
-a new doc with the attachement if no '_id' parameter is given.
-The only mandatory parameter is the 'file' parameter.
+attachement to an existing doc if the '_id' parameter is given or creates
+a new empty doc with the attachement otherwise.
+The 'file' and 'filename' parameters are mandatory.
+
+    my ($id, $rev) = $sc->put_file({ file => 'content', filename => 'file.txt', id => 'doc_id' });
 
 =cut
 
@@ -874,6 +879,8 @@ sub put_file {
 =head2 get_file
 
 Get a file attachement from a CouchDB document.
+
+    my $content = $sc->get_file({ id => 'doc_id', filename => 'file.txt' });
 
 =cut
 
@@ -924,7 +931,7 @@ sub config {
 
 Create a Database
 
-    $sc->create_db('name');
+    my $result = $sc->create_db('name');
 
 =cut
 
