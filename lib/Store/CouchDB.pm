@@ -457,6 +457,36 @@ sub copy_doc {
     return $self->put_doc({ doc => $doc });
 }
 
+=head2 show_doc
+
+call a show function on a document to transform it.
+
+    my $content = $sc->show_doc({ show => 'design_doc/show_name' });
+
+=cut
+
+sub show_doc {
+    my ($self, $data) = @_;
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
+    }
+
+    $self->_check_db;
+
+    unless ($data->{show}) {
+        carp 'show not defined';
+        return;
+    }
+
+    my $path = $self->_make_path($data);
+    $path .= '/' . $data->{id} if defined $data->{id};
+
+    $self->method('GET');
+
+    return $self->_call($path);
+}
+
 =head2 get_view
 
 There are several ways to represent the result of a view and various
@@ -488,8 +518,9 @@ sub get_view {
 
     $self->_check_db;
 
-    my $path = $self->_make_view_path($data);
-    my $res  = $self->_call($path);
+    my $path = $self->_make_path($data);
+    $self->method('GET');
+    my $res = $self->_call($path);
 
     return unless $res->{rows}->[0];
 
@@ -551,12 +582,10 @@ sub get_post_view {
     if ($data->{opts}) {
         $opts = delete $data->{opts};
     }
-    my $path   = $self->_make_view_path($data);
-    my $method = $self->method();
+    my $path = $self->_make_path($data);
 
     $self->method('POST');
     my $res = $self->_call($path, $opts);
-    $self->method($method);
 
     my $result;
     foreach my $doc (@{ $res->{rows} }) {
@@ -589,8 +618,9 @@ sub get_view_array {
 
     $self->_check_db;
 
-    my $path = $self->_make_view_path($data);
-    my $res  = $self->_call($path);
+    my $path = $self->_make_path($data);
+    $self->method('GET');
+    my $res = $self->_call($path);
 
     my @result;
     foreach my $doc (@{ $res->{rows} }) {
@@ -644,8 +674,9 @@ sub get_array_view {
 
     $self->_check_db;
 
-    my $path = $self->_make_view_path($data);
-    my $res  = $self->_call($path);
+    my $path = $self->_make_path($data);
+    $self->method('GET');
+    my $res = $self->_call($path);
 
     my $result;
     foreach my $doc (@{ $res->{rows} }) {
@@ -665,6 +696,49 @@ sub get_array_view {
     }
 
     return $result;
+}
+
+=head2 list_view
+
+use the _list function on a view to transform its output. if your view contains
+a reduce function you have to add
+
+    opts => { reduce => 'false' }
+
+to your hash.
+
+    my $content = $sc->list_view({
+        list => 'list_name',
+        view => 'design/view',
+    #   opts => { reduce => 'false' },
+    });
+
+=cut
+
+sub list_view {
+    my ($self, $data) = @_;
+
+    unless ($data->{list}) {
+        carp "List not defined";
+        return;
+    }
+
+    unless ($data->{view}) {
+        carp "View not defined";
+        return;
+    }
+
+    if ($data->{dbname}) {
+        $self->db($data->{dbname});
+    }
+
+    $self->_check_db;
+
+    my $path = $self->_make_path($data);
+
+    $self->method('GET');
+
+    return $self->_call($path);
 }
 
 =head2 purge
@@ -866,10 +940,29 @@ sub create_db {
         $self->db($db);
     }
 
-    my $method = $self->method();
     $self->method('PUT');
     my $res = $self->_call($self->db);
-    $self->method($method);
+
+    return $res;
+}
+
+=head2 delete_db
+
+Delete/Drop a Databse
+
+    my $result = $sc->delete_db('name');
+
+=cut
+
+sub delete_db {
+    my ($self, $db) = @_;
+
+    if ($db) {
+        $self->db($db);
+    }
+
+    $self->method('DELETE');
+    my $res = $self->_call($self->db);
 
     return $res;
 }
@@ -901,13 +994,33 @@ sub _check_db {
     return;
 }
 
-sub _make_view_path {
+sub _make_path {
     my ($self, $data) = @_;
 
-    my $view = $data->{view};
-    $view =~ s/^\///;
-    my @view = split(/\//, $view, 2);
-    my $path = $self->db . '/_design/' . $view[0] . '/_view/' . $view[1];
+    my ($design, $view, $show, $list);
+
+    if (exists $data->{view}) {
+        $data->{view} =~ s/^\///;
+        ($design, $view) = split(/\//, $data->{view}, 2);
+    }
+
+    if (exists $data->{show}) {
+        $data->{show} =~ s/^\///;
+        ($design, $show) = split(/\//, $data->{show}, 2);
+    }
+
+    $list = $data->{list} if exists $data->{list};
+
+    my $path = $self->db . "/_design/${design}";
+    if ($list) {
+        $path .= "/_list/${list}/${view}";
+    }
+    elsif ($show) {
+        $path .= "/_show/${show}";
+    }
+    elsif ($view) {
+        $path .= "/_view/${view}";
+    }
 
     if (keys %{ $data->{opts} }) {
         $path .= '?';
