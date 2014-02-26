@@ -352,7 +352,8 @@ sub put_doc {
 
     my $res = $self->_call($path, $data->{doc});
 
-    return ($res->{id} || undef, $res->{rev} || undef);
+    return ($res->{id}, $res->{rev}) if wantarray;
+    return $res->{id};
 }
 
 =head2 del_doc
@@ -394,8 +395,8 @@ sub del_doc {
     $self->method('DELETE');
     my $res = $self->_call($path);
 
-    return ($res->{id} || undef, $res->{rev} || undef) if wantarray;
-    return $res->{rev} || undef;
+    return ($res->{id}, $res->{rev}) if wantarray;
+    return $res->{rev};
 }
 
 =head2 update_doc
@@ -873,7 +874,8 @@ sub put_file {
     $self->method('PUT');
     my $res = $self->_call($path, $data->{file}, $data->{content_type});
 
-    return ($res->{id} || undef, $res->{rev} || undef);
+    return ($res->{id}, $res->{rev}) if wantarray;
+    return $res->{id};
 }
 
 =head2 get_file

@@ -2,13 +2,12 @@
 
 use strict;
 use warnings;
-use Test::More tests => 21;
+use Test::More tests => 22;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
 use Store::CouchDB;
 use Scalar::Util qw(looks_like_number);
-use Data::Dump 'dump';    #debug
 
 my $sc      = Store::CouchDB->new();
 my $db      = 'test' . int(rand(100) + 100);
@@ -19,7 +18,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 20
+    skip 'needs admin party CouchDB on localhost:5984', 21
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
@@ -35,9 +34,9 @@ SKIP: {
     my @db = $sc->all_dbs;
     ok((grep { $_ eq $db } @db), 'get all databases');
 
-    # create doc
+    # create doc (array return)
     my ($id, $rev) = $sc->put_doc({ doc => { key => 'value' } });
-    ok(($id and $rev =~ m/^1-/), 'create document');
+    ok(($id and $rev =~ m/^1-/), 'create document (array return)');
 
     # head doc
     $rev = $sc->head_doc({ id => $id });
@@ -142,6 +141,10 @@ SKIP: {
     # get file
     $result = $sc->get_file({ id => $id, filename => 'file.txt' });
     ok($result eq 'content', 'get attachment');
+
+    # create doc (single variable return)
+    my $newid = $sc->put_doc({ doc => { key => 'somevalue' } });
+    ok(($newid and $newid !~ m/^1-/), 'create document');
 }
 
 END {
