@@ -1048,7 +1048,7 @@ sub _make_path {
 sub _call {
     my ($self, $path, $content, $ct) = @_;
 
-    binmode(STDERR, ":encoding(UTF-8)");
+    binmode(STDERR, ":encoding(UTF-8)") if $self->debug;
 
     # cleanup old error
     $self->clear_error if $self->has_error;
