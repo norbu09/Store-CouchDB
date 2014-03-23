@@ -289,13 +289,14 @@ sub get_design_docs {
 
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
-    $path .= '&include_docs=true' if ($data && $data->{include_docs});
+    $path .= '&include_docs=true'
+        if (ref $data eq 'HASH' && $data->{include_docs});
 
     $self->method('GET');
     my $res = $self->_call($path);
 
     return unless $res->{rows}->[0];
-    return $res->{rows} if ($data && $data->{include_docs});
+    return $res->{rows} if (ref $data eq 'HASH' && $data->{include_docs});
 
     my @design;
     foreach my $design (@{ $res->{rows} }) {
@@ -320,7 +321,7 @@ just a wrapper for put_doc.
 sub put_doc {
     my ($self, $data) = @_;
 
-    unless ($data->{doc} and ref $data->{doc} eq 'HASH') {
+    unless (exists $data->{doc} and ref $data->{doc} eq 'HASH') {
         carp "Document not defined";
         return;
     }
@@ -328,7 +329,7 @@ sub put_doc {
     $self->_check_db($data);
 
     my $path;
-    if ($data->{doc}->{_id}) {
+    if (exists $data->{doc}->{_id} and defined $data->{doc}->{_id}) {
         $self->method('PUT');
         $path = $self->db . '/' . $data->{doc}->{_id};
         delete $data->{doc}->{_id};
@@ -401,7 +402,10 @@ discouraged to use it and it may disappear in a later version.
 sub update_doc {
     my ($self, $data) = @_;
 
-    unless ($data->{doc}) {
+    unless (ref $data eq 'HASH'
+        and exists $data->{doc}
+        and ref $data->{doc} eq 'HASH')
+    {
         carp "Document not defined";
         return;
     }
