@@ -224,11 +224,7 @@ sub get_doc {
         $data = { id => $data };
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     unless ($data->{id}) {
         carp 'Document ID not defined';
@@ -253,11 +249,9 @@ If all you need is the revision a HEAD call is enough.
 sub head_doc {
     my ($self, $data) = @_;
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
     }
 
-    $self->_check_db;
+    $self->_check_db($data);
 
     unless ($data->{id}) {
         carp 'Document ID not defined';
@@ -289,11 +283,7 @@ Again the "dbname" key is optional.
 sub get_design_docs {
     my ($self, $data) = @_;
 
-    if ($data && $data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
@@ -333,11 +323,7 @@ sub put_doc {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $path;
     if ($data->{doc}->{_id}) {
@@ -379,11 +365,8 @@ sub del_doc {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
+    $self->_check_db($data);
 
-    $self->_check_db;
 
     if (!$rev) {
         $rev = $self->head_doc({ id => $id });
@@ -421,10 +404,9 @@ sub update_doc {
         $data->{doc}->{_id} = $data->{name};
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
     }
 
+    $self->_check_db($data);
     return $self->put_doc($data);
 }
 
@@ -448,10 +430,6 @@ sub copy_doc {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
     # as long as CouchDB does not support automatic document name creation
     # for the copy command we copy the ugly way ...
     my $doc = $self->get_doc($data);
@@ -472,11 +450,7 @@ call a show function on a document to transform it.
 sub show_doc {
     my ($self, $data) = @_;
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     unless ($data->{show}) {
         carp 'show not defined';
@@ -516,11 +490,7 @@ sub get_view {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $path = $self->_make_path($data);
     $self->method('GET');
@@ -576,11 +546,7 @@ sub get_post_view {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $opts;
     if ($data->{opts}) {
@@ -616,11 +582,7 @@ sub get_view_array {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $path = $self->_make_path($data);
     $self->method('GET');
@@ -672,11 +634,7 @@ sub get_array_view {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $path = $self->_make_path($data);
     $self->method('GET');
@@ -732,11 +690,7 @@ sub list_view {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $path = $self->_make_path($data);
 
@@ -759,11 +713,7 @@ the moment.
 sub purge {
     my ($self, $data) = @_;
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $path = $self->db . '/_changes?limit=' . $self->purge_limit . '&since=0';
     $self->method('GET');
@@ -799,11 +749,7 @@ view index as well.
 sub compact {
     my ($self, $data) = @_;
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $res;
     if ($data->{purge}) {
@@ -852,11 +798,7 @@ sub put_file {
         return;
     }
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     my $id  = $data->{id}  || $data->{doc}->{_id};
     my $rev = $data->{rev} || $data->{doc}->{_rev};
@@ -889,11 +831,7 @@ Get a file attachement from a CouchDB document.
 sub get_file {
     my ($self, $data) = @_;
 
-    if ($data->{dbname}) {
-        $self->db($data->{dbname});
-    }
-
-    $self->_check_db;
+    $self->_check_db($data);
 
     unless ($data->{id}) {
         carp "Document ID not defined";
@@ -989,10 +927,18 @@ sub all_dbs {
 }
 
 sub _check_db {
-    my ($self) = @_;
+    my ($self, $data) = @_;
+
+    if (    ref $data eq 'HASH'
+        and exists $data->{dbname}
+        and defined $data->{dbname})
+    {
+        $self->db($data->{dbname});
+        return;
+    }
 
     unless ($self->has_db) {
-        carp 'database missing! you must set $sc->db() before running queries';
+        carp 'database not defined! you must set $sc->db("some_database")';
         return;
     }
 
