@@ -311,8 +311,9 @@ sub get_design_docs {
 
 The put_doc call writes a document to the database and either updates a
 existing document if the _id field is present or writes a new one.
-Updates can also be done with the update_doc call but that is really
-just a wrapper for put_doc.
+Updates can also be done with the C<update_doc> call if you want to prevent
+creation of a new document in case the document ID is missing in your input
+hashref.
 
     my ($id, $rev) = $sc->put_doc({ doc => { .. }, dbname => 'database' });
 
@@ -399,11 +400,18 @@ sub del_doc {
 
 =head2 update_doc
 
-The update_doc function is really just a wrapper for the put_doc call
-and mainly there for compatibility. the naming is different and it is
-discouraged to use it and it may disappear in a later version.
+B<WARNING: as of Version C<3.4> this method breaks old code!>
 
-    my $id = $sc->update_doc({ doc => { .. }, name => 'doc_id', dbname => 'database' });
+The use of C<update_doc()> was discouraged before this version and was merely a
+wrapper for put_doc, which became unnecessary. Please make sure you update your
+code if you were using this method before version C<3.4>.
+
+C<update_doc> refuses to push a document if the document ID is missing or the
+document does not exist. This will make sure that you can only update existing
+documents and not accidentally create a new one.
+
+            $id = $sc->update_doc({ doc => { _id => '', ... } });
+    ($id, $rev) = $sc->update_doc({ doc => { .. }, name => 'doc_id', dbname => 'database' });
 
 =cut
 
@@ -422,9 +430,22 @@ sub update_doc {
         $data->{doc}->{_id} = $data->{name};
     }
 
+    unless (exists $data->{doc}->{_id} and defined $data->{doc}->{_id}) {
+        carp "Document ID not defined";
+        return;
     }
 
     $self->_check_db($data);
+
+    my $rev = $self->head_doc($data->{doc}->{_id});
+    unless ($rev) {
+        carp "Document does not exist";
+        return;
+    }
+
+    # store revision in original doc to be able to put_doc
+    $data->{doc}->{_rev} = $rev;
+
     return $self->put_doc($data);
 }
 

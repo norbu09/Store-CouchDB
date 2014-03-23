@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 22;
+use Test::More tests => 25;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
@@ -35,17 +35,40 @@ SKIP: {
     ok((grep { $_ eq $db } @db), 'get all databases');
 
     # create doc (array return)
-    my ($id, $rev) = $sc->put_doc({ doc => { key => 'value' } });
+    my ($id, $rev) = $sc->put_doc({
+        doc => { key => 'value', int => 1234, float => 12.34 },
+    });
     ok(($id and $rev =~ m/^1-/), 'create document (array return)');
 
     # head doc
     $rev = $sc->head_doc($id);
     ok($rev =~ /^1-/, 'get document head');
 
-    # get doc
-    my $doc = $sc->get_doc({ id => $id });
-    is_deeply($doc, { _id => $id, _rev => $rev, key => 'value' },
-        "get document");
+    # get doc (single scalar input)
+    my $doc = $sc->get_doc($id);
+    is_deeply(
+        $doc, {
+            _id   => $id,
+            _rev  => $rev,
+            key   => 'value',
+            int   => 1234,
+            float => 12.34,
+        },
+        "get document (single scalar input)"
+    );
+
+    # get doc (hashref input)
+    $doc = $sc->get_doc({ id => $id });
+    is_deeply(
+        $doc, {
+            _id   => $id,
+            _rev  => $rev,
+            key   => 'value',
+            int   => 1234,
+            float => 12.34,
+        },
+        "get document (hashref input)"
+    );
 
     # create design doc for show/view/list tests
     $result = $sc->put_doc({
@@ -74,9 +97,33 @@ SKIP: {
     $result = $sc->show_doc({ id => $id, show => 'test/show' });
     ok($result eq 'value', 'show document');
 
-    # update doc
-    ($id, $rev) = $sc->put_doc(
-        { doc => { _id => $id, _rev => $rev, key => "newvalue" } });
+    # update doc (missing ID)
+    my ($fid, $frev) = $sc->update_doc({
+            doc => {
+                key   => "newvalue",
+                int   => 456,
+                float => 4.56
+            } });
+    ok((!defined($fid) and !defined($frev)), "update document (missing ID)");
+
+    # update doc (non-existent)
+    ($fid, $frev) = $sc->update_doc({
+            doc => {
+                _id   => $id . '1',
+                key   => "newvalue",
+                int   => 456,
+                float => 4.56
+            } });
+    ok((!defined($fid) and !defined($frev)), "update non-existent document");
+
+    # update doc (no rev)
+    ($id, $rev) = $sc->update_doc({
+            doc => {
+                _id   => $id,
+                key   => "newvalue",
+                int   => 456,
+                float => 4.56
+            } });
     ok(($id and $rev =~ m/2-/), "update document");
 
     # copy doc
