@@ -1061,10 +1061,19 @@ sub _call {
     $req->method($self->method);
     $req->uri($uri);
 
-    $req->content((
-              $ct
-            ? $content
-            : $self->json->encode($content))) if ($content);
+    if ($content) {
+        if ($self->debug) {
+            require Data::Printer;
+            print STDERR __PACKAGE__
+                . ': Payload: '
+                . Data::Printer::p(\$content, colored => 1)
+                . $/;
+        }
+        $req->content((
+                  $ct
+                ? $content
+                : $self->json->encode($content)));
+    }
 
     my $ua = LWP::UserAgent->new(timeout => $self->timeout);
 
@@ -1072,11 +1081,10 @@ sub _call {
     my $res = $ua->request($req);
 
     if ($self->debug) {
-        require Data::Dump;
-        print STDERR __PACKAGE__
-            . ": Result: "
-            . Data::Dump::dump($res->decoded_content)
-            . $/;
+        my $dc = $res->decoded_content;
+        chomp $dc;
+        require Data::Printer;
+        print STDERR __PACKAGE__ . ': Result: ' . Data::Printer::p(\$dc) . $/;
     }
 
     if ($self->method eq 'HEAD') {
