@@ -119,7 +119,7 @@ where the dbname key is optional. Alternatively this works too:
 
 If all you need is the revision a HEAD call is enough.
 
-    my $rev = $sc->head_doc({ id => 'doc_id' });
+    my $rev = $sc->head_doc('doc_id');
 
 =head2 get_design_docs
 

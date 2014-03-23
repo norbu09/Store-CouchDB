@@ -39,7 +39,7 @@ SKIP: {
     ok(($id and $rev =~ m/^1-/), 'create document (array return)');
 
     # head doc
-    $rev = $sc->head_doc({ id => $id });
+    $rev = $sc->head_doc($id);
     ok($rev =~ /^1-/, 'get document head');
 
     # get doc
@@ -80,11 +80,11 @@ SKIP: {
     ok(($id and $rev =~ m/2-/), "update document");
 
     # copy doc
-    my ($copy_id, $copy_rev) = $sc->copy_doc({ id => $id });
+    my ($copy_id, $copy_rev) = $sc->copy_doc($id);
     ok(($copy_id and $copy_rev =~ m/1-/), "copy document");
 
     # delete doc
-    $copy_rev = $sc->del_doc({ id => $copy_id });
+    $copy_rev = $sc->del_doc($copy_id);
     ok(($copy_rev =~ m/2-/), "delete document");
 
     # get design docs

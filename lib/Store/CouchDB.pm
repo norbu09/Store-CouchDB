@@ -242,13 +242,15 @@ sub get_doc {
 
 If all you need is the revision a HEAD call is enough.
 
-    my $rev = $sc->head_doc({ id => 'doc_id' });
+    my $rev = $sc->head_doc('doc_id');
 
 =cut
 
 sub head_doc {
     my ($self, $data) = @_;
 
+    unless (ref $data eq 'HASH') {
+        $data = { id => $data };
     }
 
     $self->_check_db($data);
@@ -263,7 +265,7 @@ sub head_doc {
     $self->method('HEAD');
     my $rev = $self->_call($path);
 
-    $rev =~ s/"//g;
+    $rev =~ s/"//g if $rev;
 
     return $rev;
 }
@@ -357,6 +359,10 @@ revision in SCALAR context, document ID and revision in ARRAY context.
 sub del_doc {
     my ($self, $data) = @_;
 
+    unless (ref $data eq 'HASH') {
+        $data = { id => $data };
+    }
+
     my $id  = $data->{id}  || $data->{_id};
     my $rev = $data->{rev} || $data->{_rev};
 
@@ -424,6 +430,10 @@ _id and _rev fields and saves it back as a new document.
 
 sub copy_doc {
     my ($self, $data) = @_;
+
+    unless (ref $data eq 'HASH') {
+        $data = { id => $data };
+    }
 
     unless ($data->{id}) {
         carp "Document ID not defined";
@@ -804,7 +814,7 @@ sub put_file {
     my $rev = $data->{rev} || $data->{doc}->{_rev};
 
     if (!$rev && $id) {
-        $rev = $self->head_doc({ id => $id });
+        $rev = $self->head_doc($id);
         print STDERR __PACKAGE__ . ": put_file(): rev $rev\n" if $self->debug;
     }
 
