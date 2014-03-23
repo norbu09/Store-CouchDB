@@ -376,9 +376,15 @@ sub del_doc {
 
     $self->_check_db($data);
 
+    # get doc revision if missing
+    unless ($rev) {
+        $rev = $self->head_doc($id);
+    }
 
-    if (!$rev) {
-        $rev = $self->head_doc({ id => $id });
+    # stop if doc doesn't exist
+    unless ($rev) {
+        carp "Document does not exist";
+        return;
     }
 
     my $path;
@@ -449,6 +455,12 @@ sub copy_doc {
     # as long as CouchDB does not support automatic document name creation
     # for the copy command we copy the ugly way ...
     my $doc = $self->get_doc($data);
+
+    unless ($doc) {
+        carp "Document does not exist";
+        return;
+    }
+
     delete $doc->{_id};
     delete $doc->{_rev};
 
