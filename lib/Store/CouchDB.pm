@@ -332,7 +332,6 @@ sub put_doc {
     if (exists $data->{doc}->{_id} and defined $data->{doc}->{_id}) {
         $self->method('PUT');
         $path = $self->db . '/' . $data->{doc}->{_id};
-        delete $data->{doc}->{_id};
     }
     else {
         $self->method('POST');
@@ -340,6 +339,9 @@ sub put_doc {
     }
 
     my $res = $self->_call($path, $data->{doc});
+
+    # update revision in original doc for convenience
+    $data->{doc}->{_rev} = $res->{rev};
 
     return ($res->{id}, $res->{rev}) if wantarray;
     return $res->{id};
