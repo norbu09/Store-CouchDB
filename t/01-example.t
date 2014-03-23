@@ -119,9 +119,15 @@ SKIP: {
 
     # purge
     $result = $sc->purge();
-    is_deeply($result,
-        { 5 => { purge_seq => 1, purged => { $copy_id => [$copy_rev] } } },
-        'purge');
+    is_deeply(
+        $result, {
+            5 => {
+                purge_seq => 1,
+                purged    => { $copy_id => [$copy_rev] },
+            },
+        },
+        'purge'
+    );
 
     # compact
     $result = $sc->compact({ purge => 1, view_compact => 1 });
@@ -140,7 +146,11 @@ SKIP: {
 
     # get file
     $result = $sc->get_file({ id => $id, filename => 'file.txt' });
-    ok($result eq 'content', 'get attachment');
+    is_deeply(
+        $result,
+        { file => 'content', content_type => 'text/plain' },
+        'get attachment'
+    );
 
     # create doc (single variable return)
     my $newid = $sc->put_doc({ doc => { key => 'somevalue' } });

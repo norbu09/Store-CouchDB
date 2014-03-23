@@ -842,6 +842,7 @@ sub put_file {
     my $path = $self->db . '/' . $id . '/' . $data->{filename} . '?rev=' . $rev;
 
     $self->method('PUT');
+    $data->{content_type} ||= 'text/plain';
     my $res = $self->_call($path, $data->{file}, $data->{content_type});
 
     return ($res->{id}, $res->{rev}) if wantarray;
