@@ -270,6 +270,31 @@ sub head_doc {
     return $rev;
 }
 
+=head2 all_docs
+
+This call returns a list of document IDs and revisions by default.
+Use C<include_docs> to get all Documents attached as well.
+
+    my @docs = @{ $sc->all_docs({ include_docs => 'true' }) };
+
+=cut
+
+sub all_docs {
+    my ($self, $data) = @_;
+
+    $self->_check_db($data);
+
+    my $path = $self->db . '/_all_docs';
+    $path .= '?include_docs=true'
+        if (ref $data eq 'HASH' and $data->{include_docs});
+
+    $self->method('GET');
+    my $res = $self->_call($path);
+
+    return unless $res->{rows}->[0];
+    return $res->{rows};
+}
+
 =head2 get_design_docs
 
 The get_design_docs call returns all design document names in an array
@@ -290,13 +315,13 @@ sub get_design_docs {
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
     $path .= '&include_docs=true'
-        if (ref $data eq 'HASH' && $data->{include_docs});
+        if (ref $data eq 'HASH' and $data->{include_docs});
 
     $self->method('GET');
     my $res = $self->_call($path);
 
     return unless $res->{rows}->[0];
-    return $res->{rows} if (ref $data eq 'HASH' && $data->{include_docs});
+    return $res->{rows} if (ref $data eq 'HASH' and $data->{include_docs});
 
     my @design;
     foreach my $design (@{ $res->{rows} }) {

@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 25;
+use Test::More tests => 27;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
@@ -18,7 +18,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 24
+    skip 'needs admin party CouchDB on localhost:5984', 26
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
@@ -202,6 +202,33 @@ SKIP: {
     # create doc (single variable return)
     my $newid = $sc->put_doc({ doc => { key => 'somevalue' } });
     ok(($newid and $newid !~ m/^1-/), 'create document');
+
+    # all_docs
+    $result = $sc->all_docs;
+    ok((
+                    scalar(@$result) == 4
+                and $result->[0]->{value}->{rev} =~ m/2-/
+                and $result->[1]->{value}->{rev} =~ m/2-/
+                and $result->[2]->{value}->{rev} =~ m/1-/
+                and $result->[3]->{value}->{rev} =~ m/1-/
+                and $result->[3]->{id} eq '_design/test'
+        ),
+        "all docs"
+    );
+
+    # all_docs (include_docs)
+    $result = $sc->all_docs({ include_docs => 1 });
+    ok((
+                    scalar(@$result) == 4
+                and $result->[0]->{value}->{rev} =~ m/2-/
+                and $result->[1]->{value}->{rev} =~ m/2-/
+                and $result->[2]->{value}->{rev} =~ m/1-/
+                and $result->[3]->{value}->{rev} =~ m/1-/
+                and $result->[3]->{id} eq '_design/test'
+                and $result->[0]->{doc}->{key} == 42
+        ),
+        "all docs (include_docs)"
+    );
 }
 
 END {

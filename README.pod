@@ -121,6 +121,13 @@ If all you need is the revision a HEAD call is enough.
 
     my $rev = $sc->head_doc('doc_id');
 
+=head2 all_docs
+
+This call returns a list of document IDs and revisions by default.
+Use C<include_docs> to get all Documents attached as well.
+
+    my @docs = @{ $sc->all_docs({ include_docs => 'true' }) };
+
 =head2 get_design_docs
 
 The get_design_docs call returns all design document names in an array
