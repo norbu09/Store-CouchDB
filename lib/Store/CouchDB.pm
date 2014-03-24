@@ -10,6 +10,7 @@ use JSON;
 use LWP::UserAgent;
 use URI::Escape;
 use Carp;
+use Data::Dump 'dump';
 
 =head1 SYNOPSIS
 
@@ -570,6 +571,15 @@ sub get_view {
     $self->method('GET');
     my $res = $self->_call($path);
 
+    # fallback lookup for broken data consistency due to the way earlier
+    # versions of this module where handling (or not) input data that had been
+    # stringified by dumpers or otherwise internally
+    # e.g. numbers were stored as strings which will be used as keys eventually
+    unless ($res->{rows}->[0]) {
+        $path = $self->_make_path($data, 1);
+        $res = $self->_call($path);
+    }
+
     return unless $res->{rows}->[0];
 
     my $c      = 0;
@@ -626,8 +636,8 @@ sub get_post_view {
     if ($data->{opts}) {
         $opts = delete $data->{opts};
     }
-    my $path = $self->_make_path($data);
 
+    my $path = $self->_make_path($data);
     $self->method('POST');
     my $res = $self->_call($path, $opts);
 
@@ -661,6 +671,15 @@ sub get_view_array {
     my $path = $self->_make_path($data);
     $self->method('GET');
     my $res = $self->_call($path);
+
+    # fallback lookup for broken data consistency due to the way earlier
+    # versions of this module where handling (or not) input data that had been
+    # stringified by dumpers or otherwise internally
+    # e.g. numbers were stored as strings which will be used as keys eventually
+    unless ($res->{rows}->[0]) {
+        $path = $self->_make_path($data, 1);
+        $res = $self->_call($path);
+    }
 
     my @result;
     foreach my $doc (@{ $res->{rows} }) {
@@ -713,6 +732,15 @@ sub get_array_view {
     my $path = $self->_make_path($data);
     $self->method('GET');
     my $res = $self->_call($path);
+
+    # fallback lookup for broken data consistency due to the way earlier
+    # versions of this module where handling (or not) input data that had been
+    # stringified by dumpers or otherwise internally
+    # e.g. numbers were stored as strings which will be used as keys eventually
+    unless ($res->{rows}->[0]) {
+        $path = $self->_make_path($data, 1);
+        $res = $self->_call($path);
+    }
 
     my $result;
     foreach my $doc (@{ $res->{rows} }) {
@@ -1021,7 +1049,7 @@ sub _check_db {
 }
 
 sub _make_path {
-    my ($self, $data) = @_;
+    my ($self, $data, $compat) = @_;
 
     my ($design, $view, $show, $list);
 
@@ -1049,10 +1077,16 @@ sub _make_path {
     }
 
     if (keys %{ $data->{opts} }) {
+
+        # make sure stringified keys and values return their original state
+        # because otherwise JSON will encode numbers as strings
+        my $opts = eval dump $data->{opts};    ## no critic
+
         $path .= '?';
-        foreach my $key (keys %{ $data->{opts} }) {
-            my $value = $data->{opts}->{$key};
+        foreach my $key (keys %$opts) {
+            my $value = $opts->{$key};
             if ($key =~ m/key/) {
+                $value .= '' if $compat;
                 $value = $self->json->encode($value);
             }
             $value = uri_escape($value);
@@ -1086,13 +1120,19 @@ sub _call {
     $req->uri($uri);
 
     if ($content) {
+
+        # make sure stringified keys and values return their original state
+        # because otherwise JSON will encode numbers as strings for example
+        my $c = eval dump $content;    ## no critic
+
         if ($self->debug) {
             $self->_log('Payload: ' . $self->_dump($content));
         }
+
         $req->content((
                   $ct
                 ? $content
-                : $self->json->encode($content)));
+                : $self->json->encode($c)));
     }
 
     my $ua = LWP::UserAgent->new(timeout => $self->timeout);

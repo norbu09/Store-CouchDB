@@ -120,7 +120,7 @@ SKIP: {
     ($id, $rev) = $sc->update_doc({
             doc => {
                 _id   => $id,
-                key   => "newvalue",
+                key   => "42",
                 int   => 456,
                 float => 4.56
             } });
@@ -138,22 +138,26 @@ SKIP: {
     $result = $sc->get_design_docs;
     is_deeply($result, ['test'], 'get design documents');
 
-    # get view
-    $result =
-        $sc->get_view({ view => 'test/view', opts => { reduce => 'false' } });
-    is_deeply($result, { newvalue => 2 }, 'get view (plain)');
+    # get view (key)
+    $result = $sc->get_view({
+        view => 'test/view',
+        opts => { key => 42, reduce => 'false' },
+    });
+    is_deeply($result, { 42 => 2 }, 'get view (plain)');
 
     # get view reduce
-    $result =
-        $sc->get_view({ view => 'test/view', opts => { reduce => 'true' } });
-    is_deeply($result, { 0 => 1 }, 'get view (reduce)');
+    $result = $sc->get_view({
+        view => 'test/view',
+        opts => { reduce => 'true', group => 'true' },
+    });
+    is_deeply($result, { 42 => 1 }, 'get view (reduce)');
 
     # list view
     $result = $sc->list_view({
             view => 'test/view',
             list => 'list',
             opts => { reduce => 'false' } });
-    is_deeply($result, ['newvalue'], 'list view');
+    is_deeply($result, [42], 'list view');
 
     # get array view
     $result = $sc->get_array_view({
@@ -162,7 +166,7 @@ SKIP: {
     });
     is_deeply(
         $result,
-        [ { id => $id, key => 'newvalue', value => 2 } ],
+        [ { id => $id, key => 42, value => 2 } ],
         'get array view'
     );
 
@@ -173,7 +177,7 @@ SKIP: {
     });
     is_deeply(
         \@result,
-        [ { id => $id, key => 'newvalue', value => 2 } ],
+        [ { id => $id, key => 42, value => 2 } ],
         'get view array'
     );
 
