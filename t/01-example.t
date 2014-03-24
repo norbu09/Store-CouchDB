@@ -18,7 +18,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 21
+    skip 'needs admin party CouchDB on localhost:5984', 24
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
