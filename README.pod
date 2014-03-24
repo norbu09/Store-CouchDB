@@ -217,7 +217,7 @@ handy for getting a hash structure for several documents in the DB.
 
 =head2 get_view_array
 
-Same as get_array_view only returns a real array ref. Use either one
+Same as get_array_view only returns a real array. Use either one
 depending on your use case and convenience.
 
 =head2 get_array_view

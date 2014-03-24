@@ -643,7 +643,7 @@ sub get_post_view {
 
 =head2 get_view_array
 
-Same as get_array_view only returns a real array ref. Use either one
+Same as get_array_view only returns a real array. Use either one
 depending on your use case and convenience.
 
 =cut
@@ -679,7 +679,7 @@ sub get_view_array {
         }
     }
 
-    return \@result;
+    return @result;
 }
 
 =head2 get_array_view
