@@ -556,7 +556,7 @@ sub get_view {
         else {
             next unless exists $doc->{value};
             if (ref $doc->{key} eq 'ARRAY') {
-                _hash($result, $doc->{value}, @{ $doc->{key} });
+                $self->_hash($result, $doc->{value}, @{ $doc->{key} });
             }
             else {
                 # TODO debug why this crashes from time to time
@@ -854,7 +854,7 @@ sub put_file {
 
     if (!$rev && $id) {
         $rev = $self->head_doc($id);
-        print STDERR __PACKAGE__ . ": put_file(): rev $rev\n" if $self->debug;
+        $self->_log("put_file(): rev $rev") if $self->debug;
     }
 
     # create a new doc if required
@@ -1054,8 +1054,7 @@ sub _call {
         if ($self->user and $self->pass);
     $uri .= $self->host . ':' . $self->port . '/' . $path;
 
-    print STDERR __PACKAGE__ . ': ' . $self->method . ": $uri\n"
-        if $self->debug;
+    $self->_log($self->method . ": $uri") if $self->debug;
 
     my $req = HTTP::Request->new();
     $req->method($self->method);
@@ -1063,11 +1062,7 @@ sub _call {
 
     if ($content) {
         if ($self->debug) {
-            require Data::Printer;
-            print STDERR __PACKAGE__
-                . ': Payload: '
-                . Data::Printer::p(\$content, colored => 1)
-                . $/;
+            $self->_log('Payload: ' . $self->_dump($content));
         }
         $req->content((
                   $ct
@@ -1083,17 +1078,11 @@ sub _call {
     if ($self->debug) {
         my $dc = $res->decoded_content;
         chomp $dc;
-        require Data::Printer;
-        print STDERR __PACKAGE__ . ': Result: ' . Data::Printer::p(\$dc) . $/;
+        $self->_log('Result: ' . $self->_dump($dc));
     }
 
     if ($self->method eq 'HEAD') {
-        if ($self->debug) {
-            print STDERR __PACKAGE__
-                . ": Revision: "
-                . $res->header('ETag')
-                . $/;
-        }
+        $self->_log('Revision: ' . $res->header('ETag')) if $self->debug;
         return $res->header('ETag') || undef;
     }
     elsif ($res->is_success) {
@@ -1113,13 +1102,48 @@ sub _call {
 }
 
 sub _hash {
-    my ($head, $val, @tail) = @_;
+    my ($self, $head, $val, @tail) = @_;
+
     if ($#tail == 0) {
         return $head->{ shift(@tail) } = $val;
     }
     else {
-        return _hash($head->{ shift(@tail) } //= {}, $val, @tail);
+        return $self->_hash($head->{ shift(@tail) } //= {}, $val, @tail);
     }
+}
+
+sub _dump {
+    my ($self, $obj) = @_;
+
+    my %options;
+    if ($self->debug) {
+        $options{colored} = 1;
+    }
+    else {
+        $options{colored}   = 0;
+        $options{multiline} = 0;
+    }
+
+    require Data::Printer;
+    Data::Printer->import(%options) unless __PACKAGE__->can('p');
+
+    my $dump;
+    if (ref $obj) {
+        $dump = p($obj);
+    }
+    else {
+        $dump = p(\$obj);
+    }
+
+    return $dump;
+}
+
+sub _log {
+    my ($self, $msg) = @_;
+
+    print STDERR __PACKAGE__ . ': ' . $msg . $/;
+
+    return;
 }
 
 =head1 BUGS
