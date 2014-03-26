@@ -368,7 +368,7 @@ sub put_doc {
     my $res = $self->_call($path, $data->{doc});
 
     # update revision in original doc for convenience
-    $data->{doc}->{_rev} = $res->{rev};
+    $data->{doc}->{_rev} = $res->{rev} if exists $res->{rev};
 
     return ($res->{id}, $res->{rev}) if wantarray;
     return $res->{id};
