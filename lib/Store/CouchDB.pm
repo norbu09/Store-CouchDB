@@ -1125,6 +1125,13 @@ sub _call {
         # because otherwise JSON will encode numbers as strings for example
         my $c = eval dump $content;    ## no critic
 
+        # ensure couchDB _id is a string as required
+        # TODO: if support for _bulk_doc API is added we also need to make
+        # sure every document ID is a string!
+        if (ref $c eq 'HASH' && !defined $ct) {
+            $c->{_id} .= '' if exists $c->{_id};
+        }
+
         if ($self->debug) {
             $self->_log('Payload: ' . $self->_dump($content));
         }

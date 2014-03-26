@@ -36,8 +36,13 @@ SKIP: {
 
     # create doc (array return)
     my ($id, $rev) = $sc->put_doc({
-        doc => { key => 'value', int => 1234, float => 12.34 },
-    });
+            doc => {
+                _id   => 314235,
+                key   => 'value',
+                int   => 1234,
+                float => 12.34,
+            },
+        });
     ok(($id and $rev =~ m/^1-/), 'create document (array return)');
 
     # head doc
