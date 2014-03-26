@@ -227,27 +227,27 @@ SKIP: {
 
     # all_docs
     $result = $sc->all_docs;
+    @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @$result;
     ok((
-                    scalar(@$result) == 4
-                and $result->[0]->{value}->{rev} =~ m/2-/
-                and $result->[1]->{value}->{rev} =~ m/2-/
-                and $result->[2]->{value}->{rev} =~ m/1-/
-                and $result->[3]->{value}->{rev} =~ m/1-/
-                and $result->[3]->{id} eq '_design/test'
+                    scalar(@result) == 4
+                and $result[0]->{value}->{rev} =~ m/1-/
+                and $result[1]->{value}->{rev} =~ m/1-/
+                and $result[2]->{value}->{rev} =~ m/2-/
+                and $result[3]->{value}->{rev} =~ m/2-/
         ),
         "all docs"
     );
 
     # all_docs (include_docs)
     $result = $sc->all_docs({ include_docs => 1 });
+    @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @$result;
     ok((
-                    scalar(@$result) == 4
-                and $result->[0]->{value}->{rev} =~ m/2-/
-                and $result->[1]->{value}->{rev} =~ m/2-/
-                and $result->[2]->{value}->{rev} =~ m/1-/
-                and $result->[3]->{value}->{rev} =~ m/1-/
-                and $result->[3]->{id} eq '_design/test'
-                and $result->[0]->{doc}->{key} == 42
+                    scalar(@result) == 4
+                and $result[0]->{value}->{rev} =~ m/1-/
+                and $result[1]->{value}->{rev} =~ m/1-/
+                and $result[2]->{value}->{rev} =~ m/2-/
+                and $result[3]->{value}->{rev} =~ m/2-/
+                and exists $result[0]->{doc}
         ),
         "all docs (include_docs)"
     );
