@@ -1147,17 +1147,20 @@ sub _call {
     $ua->default_header('Content-Type' => $ct || "application/json");
     my $res = $ua->request($req);
 
-    if ($self->method eq 'HEAD') {
+    if ($self->method eq 'HEAD' and $res->header('ETag')) {
         $self->_log('Revision: ' . $res->header('ETag')) if $self->debug;
-        return $res->header('ETag') || undef;
+        return $res->header('ETag');
     }
-    elsif ($res->is_success) {
-        my $result;
-        eval { $result = $self->json->decode($res->content) };
-        unless ($@) {
-            $self->_log('Result: ' . $self->_dump($result)) if $self->debug;
-            return $result;
-        }
+
+    # try JSON decoding response content all the time
+    my $result;
+    eval { $result = $self->json->decode($res->content) };
+    unless ($@) {
+        $self->_log('Result: ' . $self->_dump($result)) if $self->debug;
+    }
+
+    if ($res->is_success) {
+        return $result if $result;
 
         if ($self->debug) {
             my $dc = $res->decoded_content;
@@ -1171,7 +1174,7 @@ sub _call {
         };
     }
     else {
-        $self->error($res->status_line);
+        $self->error($res->status_line . ': ' . $res->content);
     }
 
     return;
