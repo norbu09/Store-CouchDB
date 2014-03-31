@@ -252,7 +252,12 @@ SKIP: {
         "all docs (include_docs)"
     );
 
-    $result = $sc->changes({ limit => 1, include_docs => 'true' });
+    $result = $sc->changes({
+        limit        => 100,
+        doc_ids      => ['_design/test'],
+        filter       => '_doc_ids',
+        include_docs => 'true',
+    });
     ok((
             scalar(@{ $result->{results} }) == 1
                 and $result->{results}->[0]->{doc}->{_id} eq '_design/test'

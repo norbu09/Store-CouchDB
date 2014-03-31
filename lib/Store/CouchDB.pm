@@ -205,7 +205,7 @@ The Store::CouchDB class takes a any of the attributes described above as parame
 The get_doc call returns a document by its ID. If no document ID is given it
 returns undef
 
-    my $doc = $sc->get_doc({ id => 'doc_id', dbname => 'database' });
+    my $doc = $sc->get_doc({ id => 'doc_id', rev => '1-rev', dbname => 'database' });
 
 where the dbname key is optional. Alternatively this works too:
 
@@ -227,9 +227,16 @@ sub get_doc {
         return;
     }
 
-    my $path   = $self->db . '/' . $data->{id};
+    my $path = $self->db . '/' . $data->{id};
+    my $rev;
+    $rev = 'rev=' . $data->{rev} if (exists $data->{rev} and $data->{rev});
     my $params = $self->_uri_encode($data->{opts});
-    $path .= '?' . $params if $params;
+    if ($rev or $params) {
+        $path .= '?';
+        $path .= $rev . '&' if $rev;
+        $path .= $params . '&' if $params;
+        chop $path;
+    }
 
     $self->method('GET');
 
