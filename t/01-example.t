@@ -10,7 +10,7 @@ use Store::CouchDB;
 use Scalar::Util qw(looks_like_number);
 
 my $sc      = Store::CouchDB->new();
-my $db      = 'test' . int(rand(100) + 100);
+my $db      = 'store_couchdb_' . time;
 my $cleanup = 0;
 
 # use delete DB to figure out whether we can connect to CouchDB
