@@ -244,6 +244,14 @@ to your hash.
     #   opts => { reduce => 'false' },
     });
 
+=head2 changes
+
+First draft of a changes feed implementation. Currently just returns the whole
+JSON structure received. This might change in the future. As usual the C<dbname>
+key is optional if the database name is already set via the C<db> attribute.
+
+    my $changes = $sc->changes({dbname => 'database', limit => 100, since => 'now' });
+
 =head2 purge
 
 This function tries to find deleted documents via the _changes call and

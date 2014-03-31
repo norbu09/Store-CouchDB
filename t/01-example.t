@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 28;
+use Test::More tests => 29;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
@@ -18,7 +18,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 27
+    skip 'needs admin party CouchDB on localhost:5984', 28
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
@@ -250,6 +250,14 @@ SKIP: {
                 and exists $result[0]->{doc}
         ),
         "all docs (include_docs)"
+    );
+
+    $result = $sc->changes({ limit => 1, include_docs => 'true' });
+    ok((
+            scalar(@{ $result->{results} }) == 1
+                and $result->{results}->[0]->{doc}->{_id} eq '_design/test'
+        ),
+        "changes feed"
     );
 }
 

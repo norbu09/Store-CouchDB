@@ -799,6 +799,31 @@ sub list_view {
     return $self->_call($path);
 }
 
+=head2 changes
+
+First draft of a changes feed implementation. Currently just returns the whole
+JSON structure received. This might change in the future. As usual the C<dbname>
+key is optional if the database name is already set via the C<db> attribute.
+
+    my $changes = $sc->changes({dbname => 'database', limit => 100, since => 'now' });
+
+=cut
+
+sub changes {
+    my ($self, $data) = @_;
+
+    $self->_check_db($data);
+
+    $self->method('GET');
+
+    my $path   = $self->db . '/_changes';
+    my $params = $self->_uri_encode($data);
+    $path .= '?' . $params if $params;
+    my $res = $self->_call($path);
+
+    return $res;
+}
+
 =head2 purge
 
 This function tries to find deleted documents via the _changes call and
