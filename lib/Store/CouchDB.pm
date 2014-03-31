@@ -531,7 +531,6 @@ sub show_doc {
     }
 
     my $path = $self->_make_path($data);
-    $path .= '/' . $data->{id} if defined $data->{id};
 
     $self->method('GET');
 
@@ -1134,6 +1133,7 @@ sub _make_path {
     }
     elsif ($show) {
         $path .= "/_show/${show}";
+        $path .= '/' . $data->{id} if defined $data->{id};
     }
     elsif ($view) {
         $path .= "/_view/${view}";
