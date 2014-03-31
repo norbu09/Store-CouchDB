@@ -8,21 +8,15 @@ Store::CouchDB - Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-version 3.5
+version 3.6
 
 =head1 SYNOPSIS
 
 Store::CouchDB is a very thin wrapper around CouchDB. It is essentially
 a set of calls I use in production and is by no means a complete
-library, it is just complete enough for the things I need to do. This is
-a grown set of functions that evolved over the last years of using
-CouchDB in various projects and was written originally to be compatible
-with DB::CouchDB. This has long passed and can only be noticed at some
-places.
+library, it is just complete enough for the things I need to do.
 
-One of the things I banged my head against for some time is non UTF8
-stuff that somehow enters the system and then breaks CouchDB. I use the
-brilliant Encoding::FixLatin module to fix this on the fly.
+Refer to the CouchDB Documentation at: L<http://docs.couchdb.org/en/latest/>
 
     use Store::CouchDB;
     
@@ -131,12 +125,11 @@ Use C<include_docs> to get all Documents attached as well.
 =head2 get_design_docs
 
 The get_design_docs call returns all design document names in an array
-reference. You can add include_docs => 1 under the "opts" key to get the whole
-design document.
+reference. You can add C<include_docs => 'true'> to get the whole design document.
 
     my @docs = @{ $sc->get_design_docs({ dbname => 'database' }) };
 
-Again the "dbname" key is optional.
+Again the C<dbname> key is optional.
 
 =head2 put_doc
 
