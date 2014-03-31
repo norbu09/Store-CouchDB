@@ -239,7 +239,7 @@ SKIP: {
     );
 
     # all_docs (include_docs)
-    $result = $sc->all_docs({ include_docs => 1 });
+    $result = $sc->all_docs({ include_docs => 'true' });
     @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @$result;
     ok((
                     scalar(@result) == 4

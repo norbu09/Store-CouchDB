@@ -11,6 +11,7 @@ use LWP::UserAgent;
 use URI::Escape;
 use Carp;
 use Data::Dump 'dump';
+use Types::Serialiser;
 
 =head1 SYNOPSIS
 
@@ -232,7 +233,9 @@ sub get_doc {
         return;
     }
 
-    my $path = $self->db . '/' . $data->{id};
+    my $path   = $self->db . '/' . $data->{id};
+    my $params = $self->_uri_encode($data->{opts});
+    $path .= '?' . $params if $params;
 
     $self->method('GET');
 
@@ -285,9 +288,9 @@ sub all_docs {
 
     $self->_check_db($data);
 
-    my $path = $self->db . '/_all_docs';
-    $path .= '?include_docs=true'
-        if (ref $data eq 'HASH' and $data->{include_docs});
+    my $path   = $self->db . '/_all_docs';
+    my $params = $self->_uri_encode($data);
+    $path .= '?' . $params if $params;
 
     $self->method('GET');
     my $res = $self->_call($path);
@@ -315,14 +318,14 @@ sub get_design_docs {
 
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
-    $path .= '&include_docs=true'
-        if (ref $data eq 'HASH' and $data->{include_docs});
+    $path .= $self->_uri_encode($data);
 
     $self->method('GET');
     my $res = $self->_call($path);
 
     return unless $res->{rows}->[0];
-    return $res->{rows} if (ref $data eq 'HASH' and $data->{include_docs});
+    return $res->{rows}
+        if (ref $data eq 'HASH' and $data->{include_docs});
 
     my @design;
     foreach my $design (@{ $res->{rows} }) {
@@ -365,6 +368,8 @@ sub put_doc {
         $path = $self->db;
     }
 
+    my $params = $self->_uri_encode($data->{opts});
+    $path .= '?' . $params if $params;
     my $res = $self->_call($path, $data->{doc});
 
     # update revision in original doc for convenience
@@ -414,8 +419,8 @@ sub del_doc {
         return;
     }
 
-    my $path;
-    $path = $self->db . '/' . $id . '?rev=' . $rev;
+    my $path = $self->db . '/' . $id . '?rev=' . $rev;
+    $path .= $self->_uri_encode($data->{opts});
 
     $self->method('DELETE');
     my $res = $self->_call($path);
@@ -1048,6 +1053,46 @@ sub _check_db {
     return;
 }
 
+sub _uri_encode {
+    my ($self, $options, $compat) = @_;
+
+    return unless (ref $options eq 'HASH');
+
+    # make sure stringified keys and values return their original state
+    # because otherwise JSON will encode numbers as strings
+    my $opts = eval dump $options;    ## no critic
+
+    my $path = '';
+    foreach my $key (keys %$opts) {
+        my $value = $opts->{$key};
+
+        if ($key =~ m/key/) {
+
+            # backwards compatibility with key, startkey, endkey as strings
+            $value .= '' if ($compat && !ref($value));
+        }
+        else {
+            unless (ref $value) {
+
+                # copy $value to prevent stringifying
+                my $cvalue = $value;
+
+                # respect JSON booleans
+                $value = Types::Serialiser::true  if $cvalue eq 'true';
+                $value = Types::Serialiser::false if $cvalue eq 'false';
+            }
+        }
+
+        $value = uri_escape($self->json->encode($value));
+        $path .= $key . '=' . $value . '&';
+    }
+
+    # remove last '&'
+    chop($path);
+
+    return $path;
+}
+
 sub _make_path {
     my ($self, $data, $compat) = @_;
 
@@ -1077,24 +1122,8 @@ sub _make_path {
     }
 
     if (keys %{ $data->{opts} }) {
-
-        # make sure stringified keys and values return their original state
-        # because otherwise JSON will encode numbers as strings
-        my $opts = eval dump $data->{opts};    ## no critic
-
-        $path .= '?';
-        foreach my $key (keys %$opts) {
-            my $value = $opts->{$key};
-            if ($key =~ m/key/) {
-                $value .= '' if $compat;
-                $value = $self->json->encode($value);
-            }
-            $value = uri_escape($value);
-            $path .= $key . '=' . $value . '&';
-        }
-
-        # remove last '&'
-        chop($path);
+        my $params = $self->_uri_encode($data->{opts}, $compat);
+        $path .= '?' . $params if $params;
     }
 
     return $path;
