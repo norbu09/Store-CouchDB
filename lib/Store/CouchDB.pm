@@ -318,7 +318,8 @@ sub get_design_docs {
 
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
-    $path .= $self->_uri_encode($data);
+    my $params = $self->_uri_encode($data);
+    $path .= $params if $params;
 
     $self->method('GET');
     my $res = $self->_call($path);
@@ -419,8 +420,9 @@ sub del_doc {
         return;
     }
 
-    my $path = $self->db . '/' . $id . '?rev=' . $rev;
-    $path .= $self->_uri_encode($data->{opts});
+    my $path   = $self->db . '/' . $id . '?rev=' . $rev;
+    my $params = $self->_uri_encode($data->{opts});
+    $path .= $params if $params;
 
     $self->method('DELETE');
     my $res = $self->_call($path);
