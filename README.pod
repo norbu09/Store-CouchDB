@@ -8,7 +8,7 @@ Store::CouchDB - Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-version 3.6
+version 3.7
 
 =head1 SYNOPSIS
 
