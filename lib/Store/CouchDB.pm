@@ -1,11 +1,13 @@
 package Store::CouchDB;
 
+use strict;
+use warnings;
+
 use Any::Moose;
 
 # ABSTRACT: Store::CouchDB - a simple CouchDB driver
 
 # VERSION
-
 use JSON;
 use LWP::UserAgent;
 use URI::Escape;
