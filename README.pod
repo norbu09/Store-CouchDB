@@ -285,6 +285,12 @@ Get a file attachement from a CouchDB document.
 
     my $content = $sc->get_file({ id => 'doc_id', filename => 'file.txt' });
 
+=head2 del_file
+
+Delete a file attachement from a CouchDB document.
+
+    my $content = $sc->del_file({ id => 'doc_id', filename => 'file.txt' });
+
 =head2 config
 
 This can be called with a hash of config values to configure the databse
