@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 29;
+use Test::More tests => 40;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
@@ -10,6 +10,8 @@ use Store::CouchDB;
 use Scalar::Util qw(looks_like_number);
 
 my $sc      = Store::CouchDB->new();
+$sc         = Store::CouchDB->new(host => '127.0.0.1') if ($sc->has_error);
+
 my $db      = 'store_couchdb_' . time;
 my $cleanup = 0;
 
@@ -18,7 +20,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 28
+    skip 'needs admin party CouchDB on localhost:5984', 39
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
@@ -220,6 +222,10 @@ SKIP: {
         { file => 'content', content_type => 'text/plain' },
         'get attachment'
     );
+    
+    # delete file
+    my ($id2, $rev2) = $sc->del_file({id=>$id, filename => 'file.txt'});
+    ok(($id eq $id2 and $rev ne $rev2 and $rev2 =~ m/3-/), "delete attachment");
 
     # create doc (single variable return)
     my $newid = $sc->put_doc({ doc => { key => 'somevalue' } });
@@ -228,30 +234,24 @@ SKIP: {
     # all_docs
     $result = $sc->all_docs;
     @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @$result;
-    ok((
-                    scalar(@result) == 4
-                and $result[0]->{value}->{rev} =~ m/1-/
-                and $result[1]->{value}->{rev} =~ m/1-/
-                and $result[2]->{value}->{rev} =~ m/2-/
-                and $result[3]->{value}->{rev} =~ m/2-/
-        ),
-        "all docs"
-    );
+    ok((scalar(@result) == 4), "all docs, docs size");
+    ok(($result[0]->{value}->{rev} =~ m/1-/), "all docs, 0: rev of doc 31435");
+    ok((not exists $result[0]->{doc}), "all docs, 0: doc contains no content");
+    ok(($result[1]->{value}->{rev} =~ m/1-/), "all docs, 1: rev of doc _design/test");
+    ok(($result[2]->{value}->{rev} =~ m/2-/), "all docs, 2: rev of doc (random, attachement)");
+    ok(($result[3]->{value}->{rev} =~ m/3-/), "all docs, 3: rev of doc (random, somevalue)");
 
     # all_docs (include_docs)
     $result = $sc->all_docs({ include_docs => 'true' });
     @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @$result;
-    ok((
-                    scalar(@result) == 4
-                and $result[0]->{value}->{rev} =~ m/1-/
-                and $result[1]->{value}->{rev} =~ m/1-/
-                and $result[2]->{value}->{rev} =~ m/2-/
-                and $result[3]->{value}->{rev} =~ m/2-/
-                and exists $result[0]->{doc}
-        ),
-        "all docs (include_docs)"
-    );
+    ok((scalar(@result) == 4), "all docs (include_docs), docs size");
+    ok(($result[0]->{value}->{rev} =~ m/1-/), "all docs (include_docs), 0: rev of doc 31435");
+    ok((exists $result[0]->{doc}), "all docs (include_docs), 0: doc contains content");
+    ok(($result[1]->{value}->{rev} =~ m/1-/), "all docs (include_docs), 1: rev of doc _design/test");
+    ok(($result[2]->{value}->{rev} =~ m/2-/), "all docs (include_docs), 2: rev of doc (random, attachement)");
+    ok(($result[3]->{value}->{rev} =~ m/3-/), "all docs (include_docs), 3: rev of doc (random, somevalue)");
 
+    # test the changes feed
     $result = $sc->changes({
         limit        => 100,
         doc_ids      => ['_design/test'],
