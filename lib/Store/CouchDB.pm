@@ -1,12 +1,16 @@
 package Store::CouchDB;
 
+use strict;
+use warnings;
+
 use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
+
+
 
 # ABSTRACT: Store::CouchDB - a simple CouchDB driver
 
 # VERSION
-
 use JSON;
 use LWP::UserAgent;
 use URI::Escape;
@@ -984,6 +988,49 @@ sub get_file {
     return $self->_call($path);
 }
 
+=head2 del_file
+
+Delete a file attachement from a CouchDB document.
+
+    my $content = $sc->del_file({ id => 'doc_id', filename => 'file.txt' });
+
+=cut
+
+sub del_file {
+    my ($self, $data) = @_;
+
+    unless ($data->{file}) {
+        carp 'File content not defined';
+        return;
+    }
+    unless ($data->{filename}) {
+        carp 'File name not defined';
+        return;
+    }
+
+    $self->_check_db($data);
+
+    my $id  = $data->{id}  || $data->{doc}->{_id};
+    my $rev = $data->{rev} || $data->{doc}->{_rev};
+
+    unless ($id) {
+        carp 'No document specified';
+        return;
+    }
+
+    if (!$rev && $id) {
+        $rev = $self->head_doc($id);
+        $self->_log("delete_file(): rev $rev") if $self->debug;
+    }
+
+    my $path = $self->db . '/' . $id . '/' . $data->{filename} . '?rev=' . $rev;
+    $self->method('DELETE');
+    my $res = $self->_call($path);
+
+    return ($res->{id}, $res->{rev}) if wantarray;
+    return $res->{id};
+}
+
 =head2 config
 
 This can be called with a hash of config values to configure the databse
@@ -1110,7 +1157,11 @@ sub _uri_encode {
             }
         }
 
-        $value = uri_escape($self->json->encode($value));
+        $value = $self->json->encode($value);
+        # remove the quotes from strings Could it be that newer versions of CouchDB do not like it :-(
+        # removing this line will make the $sc->changes test fail :-(
+        $value =~ s/^["]|["]$//g;
+        $value = uri_escape($value);
         $path .= $key . '=' . $value . '&';
     }
 
