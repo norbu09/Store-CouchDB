@@ -3,7 +3,10 @@ package Store::CouchDB;
 use strict;
 use warnings;
 
-use Any::Moose;
+use Moo;
+use MooX::Types::MooseLike::Base qw(:all);
+
+
 
 # ABSTRACT: Store::CouchDB - a simple CouchDB driver
 
@@ -46,7 +49,7 @@ Default: false
 
 has 'debug' => (
     is      => 'rw',
-    isa     => 'Bool',
+    isa     => Bool,
     default => sub { 0 },
     lazy    => 1,
 );
@@ -59,7 +62,7 @@ Default: localhost
 
 has 'host' => (
     is       => 'rw',
-    isa      => 'Str',
+    isa      => Str,
     required => 1,
     default  => sub { 'localhost' },
 );
@@ -72,7 +75,7 @@ Default: 5984
 
 has 'port' => (
     is       => 'rw',
-    isa      => 'Int',
+    isa      => Int,
     required => 1,
     default  => sub { 5984 },
 );
@@ -87,7 +90,7 @@ Default: false
 
 has 'ssl' => (
     is      => 'rw',
-    isa     => 'Bool',
+    isa     => Bool,
     default => sub { 0 },
     lazy    => 1,
 );
@@ -100,7 +103,7 @@ The databae name to use.
 
 has 'db' => (
     is        => 'rw',
-    isa       => 'Str',
+    isa       => Str,
     predicate => 'has_db',
 );
 
@@ -112,7 +115,7 @@ The DB user to authenticate as. optional
 
 has 'user' => (
     is  => 'rw',
-    isa => 'Str',
+    isa => Str,
 );
 
 =head2 pass
@@ -123,7 +126,7 @@ The password for the user to authenticate with. required if user is given.
 
 has 'pass' => (
     is  => 'rw',
-    isa => 'Str',
+    isa => Str,
 );
 
 =head2 method
@@ -180,7 +183,7 @@ Default: 30
 
 has 'timeout' => (
     is      => 'rw',
-    isa     => 'Int',
+    isa     => Int,
     default => sub { 30 },
 );
 
@@ -190,7 +193,7 @@ has 'timeout' => (
 
 has 'json' => (
     is      => 'rw',
-    isa     => 'JSON',
+    isa     => sub{JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed},
     default => sub {
         JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed;
     },
