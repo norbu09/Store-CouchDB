@@ -6,8 +6,6 @@ use warnings;
 use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 
-
-
 # ABSTRACT: Store::CouchDB - a simple CouchDB driver
 
 # VERSION
@@ -192,8 +190,9 @@ has 'timeout' => (
 =cut
 
 has 'json' => (
-    is      => 'rw',
-    isa     => sub{JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed},
+    is => 'rw',
+    isa =>
+        sub { JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed },
     default => sub {
         JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed;
     },
@@ -1153,6 +1152,7 @@ sub _uri_encode {
         }
 
         $value = $self->json->encode($value);
+
         # remove the quotes from strings Could it be that newer versions of CouchDB do not like it :-(
         # removing this line will make the $sc->changes test fail :-(
         $value =~ s/^["]|["]$//g;
