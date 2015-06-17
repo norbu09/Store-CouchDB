@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 40;
+use Test::More tests => 42;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
@@ -19,7 +19,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 39
+    skip 'needs admin party CouchDB on localhost:5984', 41
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
@@ -123,9 +123,31 @@ SKIP: {
     ok((!defined($fid) and !defined($frev)), "update non-existent document");
 
     # update doc (no rev)
+    ($fid, $frev) = $sc->update_doc({
+            doc => {
+                _id   => $id,
+                key   => "42",
+                int   => 456,
+                float => 4.56,
+            } });
+    ok((!defined($fid) and !defined($frev)), "update document (no rev)");
+
+    # update doc (with rev)
+    ($fid, $frev) = $sc->update_doc({
+            doc => {
+                _id   => $id,
+                _rev  => "2-abc123",
+                key   => "42",
+                int   => 456,
+                float => 4.56,
+            } });
+    ok((!defined($fid) and !defined($frev)), "update document (rev conflict)");
+
+    # update doc (with rev)
     ($id, $rev) = $sc->update_doc({
             doc => {
                 _id   => $id,
+                _rev  => $rev,
                 key   => "42",
                 int   => 456,
                 float => 4.56

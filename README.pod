@@ -163,8 +163,8 @@ C<update_doc> refuses to push a document if the document ID is missing or the
 document does not exist. This will make sure that you can only update existing
 documents and not accidentally create a new one.
 
-            $id = $sc->update_doc({ doc => { _id => '', ... } });
-    ($id, $rev) = $sc->update_doc({ doc => { .. }, name => 'doc_id', dbname => 'database' });
+            $id = $sc->update_doc({ doc => { _id => '', _rev => '', ... } });
+    ($id, $rev) = $sc->update_doc({ doc => { .. }, dbname => 'database' });
 
 =head2 copy_doc
 
