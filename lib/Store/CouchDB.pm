@@ -1,8 +1,5 @@
 package Store::CouchDB;
 
-use strict;
-use warnings;
-
 use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 
