@@ -992,15 +992,15 @@ sub get_file {
 
 Delete a file attachement from a CouchDB document.
 
-    my $content = $sc->del_file({ id => 'doc_id', filename => 'file.txt' });
+    my $content = $sc->del_file({ id => 'doc_id', rev => 'r-evision', filename => 'file.txt' });
 
 =cut
 
 sub del_file {
     my ($self, $data) = @_;
 
-    unless ($data->{file}) {
-        carp 'File content not defined';
+    unless ($data->{id}) {
+        carp "Document ID not defined";
         return;
     }
     unless ($data->{filename}) {
@@ -1010,15 +1010,10 @@ sub del_file {
 
     $self->_check_db($data);
 
-    my $id  = $data->{id}  || $data->{doc}->{_id};
-    my $rev = $data->{rev} || $data->{doc}->{_rev};
+    my $id  = $data->{id};
+    my $rev = $data->{rev};
 
-    unless ($id) {
-        carp 'No document specified';
-        return;
-    }
-
-    if (!$rev && $id) {
+    if ($id && !$rev) {
         $rev = $self->head_doc($id);
         $self->_log("delete_file(): rev $rev") if $self->debug;
     }

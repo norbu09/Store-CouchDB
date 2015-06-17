@@ -289,7 +289,7 @@ Get a file attachement from a CouchDB document.
 
 Delete a file attachement from a CouchDB document.
 
-    my $content = $sc->del_file({ id => 'doc_id', filename => 'file.txt' });
+    my $content = $sc->del_file({ id => 'doc_id', rev => 'r-evision', filename => 'file.txt' });
 
 =head2 config
 

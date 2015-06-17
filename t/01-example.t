@@ -9,8 +9,7 @@ BEGIN { use_ok('Store::CouchDB'); }
 use Store::CouchDB;
 use Scalar::Util qw(looks_like_number);
 
-my $sc      = Store::CouchDB->new();
-$sc         = Store::CouchDB->new(host => '127.0.0.1') if ($sc->has_error);
+my $sc = Store::CouchDB->new();
 
 my $db      = 'store_couchdb_' . time;
 my $cleanup = 0;
@@ -224,7 +223,7 @@ SKIP: {
     );
     
     # delete file
-    my ($id2, $rev2) = $sc->del_file({id=>$id, filename => 'file.txt'});
+    my ($id2, $rev2) = $sc->del_file({ id => $id, filename => 'file.txt' });
     ok(($id eq $id2 and $rev ne $rev2 and $rev2 =~ m/3-/), "delete attachment");
 
     # create doc (single variable return)
