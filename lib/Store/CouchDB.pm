@@ -591,15 +591,15 @@ sub get_view {
 
     my $path = $self->_make_path($data);
     $self->method('GET');
-    my $res = $self->_call($path, 1);
+    my $res = $self->_call($path, 'accept_stale');
 
     # fallback lookup for broken data consistency due to the way earlier
     # versions of this module where handling (or not) input data that had been
     # stringified by dumpers or otherwise internally
     # e.g. numbers were stored as strings which will be used as keys eventually
     unless ($res->{rows}->[0]) {
-        $path = $self->_make_path($data, 1);
-        $res = $self->_call($path, 1);
+        $path = $self->_make_path($data, 'compat');
+        $res = $self->_call($path, 'accept_stale');
     }
 
     return unless $res->{rows}->[0];
@@ -661,7 +661,7 @@ sub get_post_view {
 
     my $path = $self->_make_path($data);
     $self->method('POST');
-    my $res = $self->_call($path, 1, $opts);
+    my $res = $self->_call($path, 'accept_stale', $opts);
 
     my $result;
     foreach my $doc (@{ $res->{rows} }) {
@@ -692,15 +692,15 @@ sub get_view_array {
 
     my $path = $self->_make_path($data);
     $self->method('GET');
-    my $res = $self->_call($path, 1);
+    my $res = $self->_call($path, 'accept_stale');
 
     # fallback lookup for broken data consistency due to the way earlier
     # versions of this module where handling (or not) input data that had been
     # stringified by dumpers or otherwise internally
     # e.g. numbers were stored as strings which will be used as keys eventually
     unless ($res->{rows}->[0]) {
-        $path = $self->_make_path($data, 1);
-        $res = $self->_call($path, 1);
+        $path = $self->_make_path($data, 'compat');
+        $res = $self->_call($path, 'accept_stale');
     }
 
     my @result;
@@ -753,15 +753,15 @@ sub get_array_view {
 
     my $path = $self->_make_path($data);
     $self->method('GET');
-    my $res = $self->_call($path, 1);
+    my $res = $self->_call($path, 'accept_stale');
 
     # fallback lookup for broken data consistency due to the way earlier
     # versions of this module where handling (or not) input data that had been
     # stringified by dumpers or otherwise internally
     # e.g. numbers were stored as strings which will be used as keys eventually
     unless ($res->{rows}->[0]) {
-        $path = $self->_make_path($data, 1);
-        $res = $self->_call($path, 1);
+        $path = $self->_make_path($data, 'compat');
+        $res = $self->_call($path, 'accept_stale');
     }
 
     my $result;
@@ -820,7 +820,7 @@ sub list_view {
 
     $self->method('GET');
 
-    return $self->_call($path, 1);
+    return $self->_call($path, 'accept_stale');
 }
 
 =head2 changes
