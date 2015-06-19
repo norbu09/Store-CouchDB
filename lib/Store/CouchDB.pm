@@ -21,8 +21,11 @@ use Data::Dump 'dump';
 my @JSON_KEYS = qw(
     doc_ids
     key
+    keys
     startkey
+    start_key
     endkey
+    end_key
 );
 
 =head1 SYNOPSIS
