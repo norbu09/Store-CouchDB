@@ -459,8 +459,8 @@ C<update_doc> refuses to push a document if the document ID is missing or the
 document does not exist. This will make sure that you can only update existing
 documents and not accidentally create a new one.
 
-            $id = $sc->update_doc({ doc => { _id => '', ... } });
-    ($id, $rev) = $sc->update_doc({ doc => { .. }, name => 'doc_id', dbname => 'database' });
+            $id = $sc->update_doc({ doc => { _id => '', _rev => '', ... } });
+    ($id, $rev) = $sc->update_doc({ doc => { .. }, dbname => 'database' });
 
 =cut
 
@@ -475,12 +475,13 @@ sub update_doc {
         return;
     }
 
-    if ($data->{name}) {
-        $data->{doc}->{_id} = $data->{name};
-    }
-
     unless (exists $data->{doc}->{_id} and defined $data->{doc}->{_id}) {
         carp "Document ID not defined";
+        return;
+    }
+
+    unless (exists $data->{doc}->{_rev} and defined $data->{doc}->{_rev}) {
+        carp "Document revision not defined";
         return;
     }
 
@@ -491,9 +492,6 @@ sub update_doc {
         carp "Document does not exist";
         return;
     }
-
-    # store revision in original doc to be able to put_doc
-    $data->{doc}->{_rev} = $rev;
 
     return $self->put_doc($data);
 }
