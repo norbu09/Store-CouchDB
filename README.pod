@@ -86,7 +86,13 @@ Default: 5000
 
 =head2 timeout
 
-Timeout in seconds for each HTTP request. Passed onto LWP::UserAgent
+Timeout in seconds for each HTTP request. Passed onto LWP::UserAgent.
+In case of a view or list related query where the view has not been updated in
+a long time this will timeout and a new request with the C<stale> option set to
+C<update_after> will be made to avoid blocking.
+See http://docs.couchdb.org/en/latest/api/ddoc/views.html
+
+Set this very high if you don't want stale results.
 
 Default: 30
 
@@ -117,17 +123,17 @@ If all you need is the revision a HEAD call is enough.
 
 =head2 all_docs
 
-This call returns a list of document IDs and revisions by default.
+This call returns a list of document IDs with their latest revision by default.
 Use C<include_docs> to get all Documents attached as well.
 
-    my @docs = @{ $sc->all_docs({ include_docs => 'true' }) };
+    my @docs = $sc->all_docs({ include_docs => 'true' });
 
 =head2 get_design_docs
 
-The get_design_docs call returns all design document names in an array
-reference. You can add C<include_docs => 'true'> to get the whole design document.
+The get_design_docs call returns all design document names in an array.
+You can add C<include_docs => 'true'> to get whole design documents.
 
-    my @docs = @{ $sc->get_design_docs({ dbname => 'database' }) };
+    my @docs = $sc->get_design_docs({ dbname => 'database' });
 
 Again the C<dbname> key is optional.
 

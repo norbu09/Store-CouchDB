@@ -95,6 +95,10 @@ SKIP: {
                     show =>
                         'function(doc, req) { return JSON.stringify(doc.key); }',
                 },
+                filters => {
+                    with_filter =>
+                        "function(doc, req) { if (doc._id == '_design/test') { return true; } else { return false; }}",
+                },
             },
         });
     ok($result, 'create design doc');
@@ -108,8 +112,9 @@ SKIP: {
             doc => {
                 key   => "newvalue",
                 int   => 456,
-                float => 4.56
-            } });
+                float => 4.56,
+            },
+        });
     ok((!defined($fid) and !defined($frev)), "update document (missing ID)");
 
     # update doc (non-existent)
@@ -118,8 +123,9 @@ SKIP: {
                 _id   => $id . '1',
                 key   => "newvalue",
                 int   => 456,
-                float => 4.56
-            } });
+                float => 4.56,
+            },
+        });
     ok((!defined($fid) and !defined($frev)), "update non-existent document");
 
     # update doc (no rev)
@@ -128,7 +134,7 @@ SKIP: {
                 _id   => $id,
                 key   => "42",
                 int   => 456,
-                float => 4.56
+                float => 4.56,
             } });
     ok(($id and $rev =~ m/2-/), "update document");
 
@@ -141,8 +147,8 @@ SKIP: {
     ok(($copy_rev =~ m/2-/), "delete document");
 
     # get design docs
-    $result = $sc->get_design_docs;
-    is_deeply($result, ['test'], 'get design documents');
+    my @result = $sc->get_design_docs;
+    is_deeply(@result, ('test'), 'get design documents');
 
     # get view (key)
     $result = $sc->get_view({
@@ -177,7 +183,7 @@ SKIP: {
     );
 
     # get view array
-    my @result = $sc->get_view_array({
+    @result = $sc->get_view_array({
         view => 'test/view',
         opts => { reduce => 'false' },
     });
@@ -231,8 +237,8 @@ SKIP: {
     ok(($newid and $newid !~ m/^1-/), 'create document');
 
     # all_docs
-    $result = $sc->all_docs;
-    @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @$result;
+    @result = $sc->all_docs;
+    @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @result;
     ok((scalar(@result) == 4),                "all docs, docs size");
     ok(($result[0]->{value}->{rev} =~ m/1-/), "all docs, 0: rev of doc 31435");
     ok((not exists $result[0]->{doc}), "all docs, 0: doc contains no content");
@@ -248,8 +254,8 @@ SKIP: {
     );
 
     # all_docs (include_docs)
-    $result = $sc->all_docs({ include_docs => 'true' });
-    @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @$result;
+    @result = $sc->all_docs({ include_docs => 'true' });
+    @result = sort { $a->{value}->{rev} cmp $b->{value}->{rev} } @result;
     ok((scalar(@result) == 4), "all docs (include_docs), docs size");
     ok(
         ($result[0]->{value}->{rev} =~ m/1-/),
@@ -267,8 +273,7 @@ SKIP: {
     # test the changes feed
     $result = $sc->changes({
         limit        => 100,
-        doc_ids      => ['_design/test'],
-        filter       => '_doc_ids',
+        filter       => 'test/with_filter',
         include_docs => 'true',
     });
     ok((
