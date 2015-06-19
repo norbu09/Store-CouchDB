@@ -1,11 +1,13 @@
 package Store::CouchDB;
 
 use Moo;
-use MooX::Types::MooseLike::Base qw(:all);
 
 # ABSTRACT: Store::CouchDB - a simple CouchDB driver
 
 # VERSION
+
+use MooX::Types::MooseLike::Base qw(:all);
+use experimental 'smartmatch';
 use JSON;
 use LWP::UserAgent;
 use URI;
@@ -13,6 +15,15 @@ use URI::QueryParam;
 use URI::Escape;
 use Carp;
 use Data::Dump 'dump';
+
+# the following GET parameter keys have to be JSON encoded according to the
+# couchDB API documentation. http://docs.couchdb.org/en/latest/api/
+my @JSON_KEYS = qw(
+    doc_ids
+    key
+    startkey
+    endkey
+);
 
 =head1 SYNOPSIS
 
@@ -1145,15 +1156,15 @@ sub _uri_encode {
     foreach my $key (keys %$opts) {
         my $value = $opts->{$key};
 
-        if ($key =~ m/key/) {
+        if ($key ~~ @JSON_KEYS) {
 
             # backwards compatibility with key, startkey, endkey as strings
             $value .= '' if ($compat && !ref($value));
-        }
 
-        # only JSON encode URI parameter value if necessary and required by
-        # documentation. see http://docs.couchdb.org/en/latest/api/
-        $value = $self->json->encode($value) if $key =~ m/^(doc_ids)$/;
+            # only JSON encode URI parameter value if necessary and required by
+            # documentation. see http://docs.couchdb.org/en/latest/api/
+            $value = $self->json->encode($value);
+        }
 
         $value = uri_escape($value);
         $path .= $key . '=' . $value . '&';
