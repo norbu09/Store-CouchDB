@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 42;
+use Test::More tests => 43;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
@@ -19,7 +19,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 41
+    skip 'needs admin party CouchDB on localhost:5984', 42
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
@@ -103,6 +103,13 @@ SKIP: {
         });
     ok($result, 'create design doc');
 
+    # get view (string key)
+    $result = $sc->get_view({
+        view => 'test/view',
+        opts => { key => 'value', reduce => 'false' },
+    });
+    is_deeply($result, { value => 2 }, 'get view (string key)');
+
     # show doc
     $result = $sc->show_doc({ id => $id, show => 'test/show' });
     ok($result eq 'value', 'show document');
@@ -172,12 +179,12 @@ SKIP: {
     my @result = $sc->get_design_docs;
     is_deeply(@result, ('test'), 'get design documents');
 
-    # get view (key)
+    # get view (number key)
     $result = $sc->get_view({
         view => 'test/view',
         opts => { key => 42, reduce => 'false' },
     });
-    is_deeply($result, { 42 => 2 }, 'get view (plain)');
+    is_deeply($result, { 42 => 2 }, 'get view (number key)');
 
     # get view reduce
     $result = $sc->get_view({
