@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 43;
+use Test::More tests => 44;
 
 BEGIN { use_ok('Store::CouchDB'); }
 
@@ -19,7 +19,7 @@ my $cleanup = 0;
 $sc->delete_db($db);
 
 SKIP: {
-    skip 'needs admin party CouchDB on localhost:5984', 42
+    skip 'needs admin party CouchDB on localhost:5984', 43
         if ($sc->has_error and $sc->error !~ m/Object Not Found/);
 
     # operate on test DB from now on
@@ -109,6 +109,13 @@ SKIP: {
         opts => { key => 'value', reduce => 'false' },
     });
     is_deeply($result, { value => 2 }, 'get view (string key)');
+
+    # get view (array keys)
+    $result = $sc->get_view({
+        view => 'test/view',
+        opts => { keys => ['value'], reduce => 'false' },
+    });
+    is_deeply($result, { value => 2 }, 'get view (array key)');
 
     # show doc
     $result = $sc->show_doc({ id => $id, show => 'test/show' });
