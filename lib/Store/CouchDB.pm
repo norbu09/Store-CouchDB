@@ -345,7 +345,7 @@ sub get_design_docs {
     my $path = $self->db
         . '/_all_docs?descending=true&startkey="_design0"&endkey="_design"';
     my $params = $self->_uri_encode($data);
-    $path .= $params if $params;
+    $path .= '&' . $params if $params;
 
     $self->method('GET');
     my $res = $self->_call($path);
