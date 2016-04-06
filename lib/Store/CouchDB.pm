@@ -180,6 +180,7 @@ Default: 5000
 
 has 'purge_limit' => (
     is      => 'rw',
+    isa     => Int,
     default => sub { 5000 },
 );
 
@@ -215,6 +216,27 @@ has 'json' => (
         JSON->new->utf8->allow_nonref->allow_blessed->convert_blessed;
     },
 );
+
+=head2 agent
+
+=cut
+
+has 'agent' => (
+    is       => 'rw',
+    lazy     => 1,
+    required => 1,
+    builder  => '_build_agent',
+);
+
+sub _build_agent {
+    my ($self) = @_;
+
+    return LWP::UserAgent->new(
+        agent      => __PACKAGE__ . $Store::CouchDB::VERSION,
+        timeout    => $self->timeout,
+        keep_alive => 1,
+    );
+}
 
 =head1 METHODS
 
@@ -1268,10 +1290,8 @@ sub _call {
                 : $self->json->encode($c)));
     }
 
-    my $ua = LWP::UserAgent->new(timeout => $self->timeout);
-
-    $ua->default_header('Content-Type' => $ct || "application/json");
-    my $res = $ua->request($req);
+    $self->agent->default_header('Content-Type' => $ct || "application/json");
+    my $res = $self->agent->request($req);
 
     if ($self->method eq 'HEAD' and $res->header('ETag')) {
         $self->_log('Revision: ' . $res->header('ETag')) if $self->debug;
@@ -1282,7 +1302,7 @@ sub _call {
     if ($accept_stale and $res->status_line eq '500 read timeout') {
         $uri->query_param_append(stale => 'update_after');
         $req->uri($uri);
-        $res = $ua->request($req);
+        $res = $self->agent->request($req);
     }
 
     # try JSON decoding response content all the time
@@ -1337,14 +1357,14 @@ sub _dump {
     }
 
     require Data::Printer;
-    Data::Printer->import(%options) unless __PACKAGE__->can('p');
+    Data::Printer->import(%options) unless __PACKAGE__->can('np');
 
     my $dump;
     if (ref $obj) {
-        $dump = p($obj, %options);
+        $dump = np($obj, %options);
     }
     else {
-        $dump = p(\$obj, %options);
+        $dump = np(\$obj, %options);
     }
 
     return $dump;
