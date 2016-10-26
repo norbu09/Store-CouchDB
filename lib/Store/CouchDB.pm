@@ -9,6 +9,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use experimental 'smartmatch';
 use JSON;
+use LWP::Protocol::Net::Curl;
 use LWP::UserAgent;
 use URI;
 use URI::QueryParam;
