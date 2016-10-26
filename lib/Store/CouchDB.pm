@@ -38,7 +38,7 @@ library, it is just complete enough for the things I need to do.
 Refer to the CouchDB Documentation at: L<http://docs.couchdb.org/en/latest/>
 
     use Store::CouchDB;
-    
+
     my $sc = Store::CouchDB->new(host => 'localhost', db => 'your_db');
     # OR
     my $sc = Store::CouchDB->new();
@@ -106,7 +106,7 @@ has 'ssl' => (
     lazy    => 1,
 );
 
-=head2 db
+=head2 db / has_db
 
 The database name to use.
 
@@ -154,7 +154,7 @@ has 'method' => (
     default  => sub { 'GET' },
 );
 
-=head2 error
+=head2 error / has_error
 
 This is set if an error has occured and can be called to get the last
 error with the 'has_error' predicate.
