@@ -108,7 +108,7 @@ has 'ssl' => (
 
 =head2 db
 
-The databae name to use.
+The database name to use.
 
 =cut
 
