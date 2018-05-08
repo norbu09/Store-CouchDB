@@ -8,7 +8,7 @@ Store::CouchDB - Store::CouchDB - a simple CouchDB driver
 
 =head1 VERSION
 
-version 4.1
+version 4.2
 
 =head1 SYNOPSIS
 
@@ -218,13 +218,8 @@ handy for getting a hash structure for several documents in the DB.
 
 =head2 get_view_array
 
-Same as get_array_view only returns a real array. Use either one
-depending on your use case and convenience.
-
-=head2 get_array_view
-
-The get_array_view uses GET to call the view and returns an array
-reference of matched documents. This view functions is the one I use
+The get_view_array uses GET to call the view and returns an array
+of matched documents. This view functions is the one I use
 most and has the best support for corner cases.
 
     my @docs = @{ $sc->get_array_view({
@@ -236,6 +231,11 @@ A normal response hash would be the "value" part of the document with
 the _id moved in as "id". If the response is not a HASH (the request was
 resulting in key/value pairs) the entire doc is returned resulting in a
 hash of key/value/id per document.
+
+=head2 get_array_view
+
+Same as get_view_array only returns a real array. Use either one
+depending on your use case and convenience.
 
 =head2 list_view
 
