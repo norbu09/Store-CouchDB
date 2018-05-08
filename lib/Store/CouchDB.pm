@@ -786,7 +786,8 @@ depending on your use case and convenience.
 =cut
 
 sub get_array_view {
-    return [ $_[0]->get_view_array($_[1]) ];
+    my ($self, $data) = @_;
+    return [ $self->get_view_array($data) ];
 }
 
 =head2 list_view
