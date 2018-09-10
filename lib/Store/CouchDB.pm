@@ -766,7 +766,10 @@ sub get_view_array {
             next unless exists $doc->{value};
             if (ref($doc->{value}) eq 'HASH' and $parse_value_hash) {
                 $doc->{value}->{id} = $doc->{id}
-                    unless ($data->{opts}->{reduce} eq 'true');
+                    unless (exists $data->{opts}
+                    and ref($data->{opts}) eq 'HASH'
+                    and exists $data->{opts}->{reduce}
+                    and $data->{opts}->{reduce} eq 'true');
                 push(@result, $doc->{value});
             }
             else {
