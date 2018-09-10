@@ -243,7 +243,7 @@ sub _build_agent {
 
 =head2 new
 
-The Store::CouchDB class takes a any of the attributes described above as parameters.
+The Store::CouchDB class takes any of the attributes described above as parameters.
 
 =head2 get_doc
 
@@ -1391,7 +1391,7 @@ L<http://cpanratings.perl.org/d/Store::CouchDB>
 
 =head1 ACKNOWLEDGEMENTS
 
-Thanks for DB::CouchDB which was very enspiring for writing this library
+Thanks for DB::CouchDB which was very inspiring for writing this library
 
 =cut
 
